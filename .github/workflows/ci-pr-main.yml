@@ -1,0 +1,41 @@
+name: DLMM Vault
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  program_changed_files:
+    runs-on: ubuntu-24.04
+    outputs:
+      program: ${{steps.changed-files-specific.outputs.any_changed}}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Get specific changed files
+        id: changed-files-specific
+        uses: tj-actions/changed-files@v18.6
+        with:
+          files: |
+            programs/dlmm-vault
+
+  dlmm_vault_test:
+    runs-on: ubuntu-24.04
+    needs: program_changed_files
+    if: needs.program_changed_files.outputs.program == 'true'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.88
+          override: true
+      - uses: metadaoproject/setup-anchor@v3.3
+      - uses: Swatinem/rust-cache@v2
+      - run: anchor build --no-idl
+      - run: cargo test -- --nocapture
+        shell: bash

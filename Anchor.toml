@@ -1,0 +1,17 @@
+[features]
+seeds = false
+skip-lint = false
+
+[programs.localnet]
+dlmm_vault = "7Y1iiXP68seqhZtyQ1fEwxCYJVmJztwvXBBnZvRn3DyC"
+
+[programs.mainnet]
+dlmm_vault = "7Y1iiXP68seqhZtyQ1fEwxCYJVmJztwvXBBnZvRn3DyC"
+
+[provider]
+cluster = "Localnet"
+wallet = "~/.config/solana/id.json"
+
+[toolchain]
+anchor_version = "0.31.0"
+solana_version = "2.1.0"
