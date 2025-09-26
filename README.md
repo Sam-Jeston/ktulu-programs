@@ -1,3 +1,5 @@
 # LP Aggregator
 
-TODO: Name project and populate README
+## TODOs
+ - Name project and populate README
+ - Remove all `UncheckedAccount` types
