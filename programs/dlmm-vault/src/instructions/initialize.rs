@@ -1,5 +1,8 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{Mint, Token, TokenAccount},
+};
 
 use crate::DlmmVaultAccount;
 
@@ -8,7 +11,7 @@ pub struct Initialize<'info> {
     #[account(
         init,
         payer = signer,
-        space = DlmmVaultAccount::INIT_SPACE,
+        space = 8 + DlmmVaultAccount::INIT_SPACE,
         seeds = [b"dlmm_vault".as_ref(), signer.key().as_ref(), dlmm_pool.key.as_ref()],
         bump
     )]
@@ -21,24 +24,25 @@ pub struct Initialize<'info> {
     pub token_x_mint: Account<'info, Mint>,
     pub token_x_program: Program<'info, Token>,
     #[account(
-        init_if_needed,
+        init,
         payer = signer,
-        token::mint = token_x_mint,
-        token::authority = vault_account,
-        token::token_program = token_x_program
+        associated_token::mint = token_x_mint,
+        associated_token::authority = vault_account,
+        associated_token::token_program = token_x_program
     )]
     pub token_x_ata: Account<'info, TokenAccount>,
 
     pub token_y_mint: Account<'info, Mint>,
     pub token_y_program: Program<'info, Token>,
     #[account(
-        init_if_needed,
+        init,
         payer = signer,
-        token::mint = token_y_mint,
-        token::authority = vault_account,
-        token::token_program = token_y_program
+        associated_token::mint = token_y_mint,
+        associated_token::authority = vault_account,
+        associated_token::token_program = token_y_program
     )]
     pub token_y_ata: Account<'info, TokenAccount>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 pub fn handle_initialize<'a, 'b, 'c, 'info>(

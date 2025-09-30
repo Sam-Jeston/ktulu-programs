@@ -3,7 +3,7 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-cpi-example = "4JTNRRQpgLusbEhGnzTuE9kgPgMLXQX1wqBzU52GduqH"
+dlmm-vault = "7Y1iiXP68seqhZtyQ1fEwxCYJVmJztwvXBBnZvRn3DyC"
 
 [registry]
 url = "https://api.apr.dev"

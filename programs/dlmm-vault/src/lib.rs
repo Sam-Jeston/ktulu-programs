@@ -14,7 +14,7 @@ pub use errors::*;
 
 declare_program!(dlmm);
 
-declare_id!("4JTNRRQpgLusbEhGnzTuE9kgPgMLXQX1wqBzU52GduqH");
+declare_id!("7Y1iiXP68seqhZtyQ1fEwxCYJVmJztwvXBBnZvRn3DyC");
 
 #[program]
 pub mod dlmm_vault {
