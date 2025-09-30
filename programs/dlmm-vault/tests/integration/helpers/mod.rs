@@ -4,6 +4,7 @@ use solana_sdk::{entrypoint::ProgramResult, pubkey::Pubkey};
 
 pub mod dlmm_pda;
 pub mod dlmm_utils;
+pub mod load_fixture;
 
 mod utils;
 

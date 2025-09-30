@@ -27,7 +27,14 @@ pub async fn process_and_assert_ok(
         recent_blockhash,
     );
 
-    assert_matches!(banks_client.process_transaction(tx).await, Ok(()));
+    let processed_tx = banks_client.process_transaction(tx).await;
+
+    // if the result is not ok, print the error
+    if processed_tx.is_err() {
+        println!("processed_tx error: {:#?}", processed_tx.as_ref().err());
+    }
+
+    assert_matches!(processed_tx, Ok(()));
 }
 
 pub fn add_packable_account<T: Pack>(
