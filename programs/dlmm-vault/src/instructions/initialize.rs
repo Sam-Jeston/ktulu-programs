@@ -2,9 +2,10 @@ use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
+    token_interface::spl_token_metadata_interface::instruction::emit,
 };
 
-use crate::DlmmVaultAccount;
+use crate::{events::initialize::InitializeEvent, DlmmVaultAccount};
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
@@ -62,5 +63,18 @@ pub fn handle_initialize<'a, 'b, 'c, 'info>(
     ctx.accounts.vault_account.operator = operator;
     ctx.accounts.vault_account.in_position = false;
     ctx.accounts.vault_account.position_id = Pubkey::default();
+
+    emit!(InitializeEvent {
+        vault_account: ctx.accounts.vault_account.key(),
+        owner: ctx.accounts.signer.key(),
+        token_x_mint: token_x_mint,
+        token_y_mint: token_y_mint,
+        dlmm_pool: ctx.accounts.dlmm_pool.key(),
+        lower_price_range_bps: lower_price_range_bps,
+        upper_price_range_bps: upper_price_range_bps,
+        operator: operator,
+        position_id: Pubkey::default(),
+    });
+
     Ok(())
 }

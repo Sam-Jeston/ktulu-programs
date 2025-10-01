@@ -1,9 +1,9 @@
 // https://github.com/coral-xyz/anchor/issues/3401#issuecomment-2513466441
 #![allow(unexpected_cfgs)]
 use anchor_lang::prelude::*;
+use anchor_spl::token::{Mint, Token, TokenAccount};
 
 pub mod instructions;
-use anchor_spl::token::{Mint, Token, TokenAccount};
 pub use instructions::*;
 
 pub mod program_accounts;
@@ -11,6 +11,9 @@ pub use program_accounts::*;
 
 pub mod errors;
 pub use errors::*;
+
+pub mod events;
+pub use events::*;
 
 declare_program!(dlmm);
 

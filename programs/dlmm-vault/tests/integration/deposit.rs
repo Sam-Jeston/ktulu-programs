@@ -101,6 +101,7 @@ fn test_deposit() {
     // let's sim it first
     let sim_res = svm.simulate_transaction(tx.clone()).unwrap();
     let meta = svm.send_transaction(tx).unwrap();
+    println!("logs: {:#?}", meta.logs);
     assert_eq!(sim_res.meta, meta);
     assert_eq!(meta.logs[1], "Program log: static string");
     assert!(meta.compute_units_consumed < 10_000)

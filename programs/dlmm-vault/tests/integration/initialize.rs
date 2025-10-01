@@ -1,4 +1,7 @@
-use anchor_lang::{system_program, InstructionData, ToAccountMetas};
+use anchor_lang::solana_program::hash::hashv;
+use anchor_lang::{system_program, AnchorDeserialize, InstructionData, ToAccountMetas};
+use base64::decode;
+use dlmm_vault::events::initialize::InitializeEvent;
 use litesvm::LiteSVM;
 use solana_account::Account;
 use solana_instruction::account_meta::AccountMeta as SAccountMeta;
@@ -128,17 +131,6 @@ fn test_initialize() {
         &anchor_spl::token::ID,
     );
 
-    println!("vault_account: {}", vault_pda);
-    println!("signer: {}", mock_user.pubkey());
-    println!("token_x_mint: {}", USDC_MINT);
-    println!("token_y_mint: {}", USDT_MINT);
-    println!("token_x_program: {}", anchor_spl::token::ID);
-    println!("token_y_program: {}", anchor_spl::token::ID);
-    println!("dlmm_pool: {}", USDC_USDT_POOL);
-    println!("system_program: {}", system_program::ID);
-    println!("token_x_ata: {}", vault_ata_x);
-    println!("token_y_ata: {}", vault_ata_y);
-
     let accounts = dlmm_vault::accounts::Initialize {
         vault_account: vault_pda,
         signer: mock_user.pubkey(),
@@ -153,10 +145,6 @@ fn test_initialize() {
         associated_token_program: anchor_spl::associated_token::ID,
     }
     .to_account_metas(None);
-
-    for account in accounts.clone() {
-        println!("account: {:#?}", account);
-    }
 
     let instruction = Instruction {
         program_id: dlmm_vault::id().to_bytes().into(),
@@ -178,10 +166,36 @@ fn test_initialize() {
         &blockhash,
     );
     let tx = VersionedTransaction::try_new(VersionedMessage::Legacy(msg), &[&user]).unwrap();
-    // let's sim it first
     let sim_res = svm.simulate_transaction(tx.clone()).unwrap();
     let meta = svm.send_transaction(tx).unwrap();
     assert_eq!(sim_res.meta, meta);
-    assert_eq!(meta.logs[1], "Program log: static string");
-    assert!(meta.compute_units_consumed < 10_000)
+    assert_eq!(meta.logs[1], "Program log: Instruction: Initialize");
+    println!("logs: {:#?}", meta.logs);
+    assert!(meta.compute_units_consumed < 100_000);
+
+    let data_line = meta
+        .logs
+        .iter()
+        .find(|l| l.starts_with("Program data: "))
+        .expect("event not found")
+        .trim_start_matches("Program data: ")
+        .to_string();
+
+    let raw = decode(data_line).expect("base64 decode");
+    let (disc, body) = raw.split_at(8);
+
+    let want_disc = &hashv(&[b"event:", b"InitializeEvent"]).to_bytes()[..8];
+    assert_eq!(disc, want_disc, "unexpected event type");
+
+    let ev = InitializeEvent::try_from_slice(body).expect("borsh decode");
+    assert_eq!(ev.vault_account, vault_pda);
+    assert_eq!(ev.owner, mock_user.pubkey());
+    assert_eq!(ev.token_x_mint, USDC_MINT);
+    assert_eq!(ev.token_y_mint, USDT_MINT);
+    assert_eq!(ev.dlmm_pool, USDC_USDT_POOL);
+    assert_eq!(ev.lower_price_range_bps, 0);
+    assert_eq!(ev.upper_price_range_bps, 0);
+    assert_eq!(ev.operator, mock_user.pubkey());
+    assert_eq!(ev.position_id, Pubkey::default());
+    println!("ev: {:#?}", ev);
 }
