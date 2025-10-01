@@ -10,12 +10,16 @@ pub struct DlmmDeposit<'info> {
     pub signer: Signer<'info>,
 
     pub token_x_mint: Account<'info, Mint>,
+    #[account(mut)]
     pub vault_owner_token_x: Account<'info, TokenAccount>,
+    #[account(mut)]
     pub vault_token_x_account: Account<'info, TokenAccount>,
     pub token_x_program: Program<'info, Token>,
 
     pub token_y_mint: Account<'info, Mint>,
+    #[account(mut)]
     pub vault_owner_token_y: Account<'info, TokenAccount>,
+    #[account(mut)]
     pub vault_token_y_account: Account<'info, TokenAccount>,
     pub token_y_program: Program<'info, Token>,
 }
@@ -42,6 +46,11 @@ pub fn handle_dlmm_deposit<'a, 'b, 'c, 'info>(
 
     if ctx.accounts.vault_owner_token_y.owner != ctx.accounts.vault_account.owner {
         return Err(error!(VaultErrorCode::InvalidTokenAccount));
+    }
+
+    // Deposit amounts must be greater than 0
+    if token_x_deposit_amount == 0 || token_y_deposit_amount == 0 {
+        return Err(error!(VaultErrorCode::InvalidDepositAmount));
     }
 
     // Transfer from the vault_owner_token_x account to the vault_account.token_x_ata account

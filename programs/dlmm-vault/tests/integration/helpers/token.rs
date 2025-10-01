@@ -1,5 +1,6 @@
 use litesvm::LiteSVM;
 use solana_account::Account;
+use solana_pubkey::Pubkey as SPubkey;
 use solana_sdk::{
     program_option::COption, program_pack::Pack, pubkey::Pubkey, signature::Keypair, signer::Signer,
 };
@@ -40,4 +41,11 @@ pub fn create_and_fund_token_account(
     .unwrap();
 
     ata
+}
+
+pub fn validate_token_account_balance(svm: &mut LiteSVM, ata: &Pubkey, amount: u64) {
+    let pubkey = SPubkey::from(ata.to_bytes());
+    let token_account = svm.get_account(&pubkey).unwrap();
+    let token_account_data = TokenAccount::unpack_from_slice(&token_account.data).unwrap();
+    assert_eq!(token_account_data.amount, amount);
 }

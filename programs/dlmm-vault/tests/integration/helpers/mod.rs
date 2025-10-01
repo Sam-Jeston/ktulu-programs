@@ -3,12 +3,15 @@ use solana_program_test::*;
 use solana_sdk::{entrypoint::ProgramResult, pubkey::Pubkey};
 
 pub mod account;
+pub mod deposit_ix;
 pub mod dlmm_pda;
 pub mod dlmm_utils;
 pub mod event;
+pub mod initialize_ix;
 pub mod load_fixture;
 pub mod program;
 pub mod token;
+pub mod transaction;
 
 mod utils;
 

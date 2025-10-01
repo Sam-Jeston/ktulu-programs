@@ -3,4 +3,6 @@ use anchor_lang::prelude::*;
 pub enum VaultErrorCode {
     #[msg("Invalid token account")]
     InvalidTokenAccount = 401,
+    #[msg("Invalid deposit amount")]
+    InvalidDepositAmount = 402,
 }
