@@ -9,15 +9,15 @@ use spl_token::state::{Account as TokenAccount, AccountState};
 
 pub fn create_and_fund_token_account(
     svm: &mut LiteSVM,
-    user: &Keypair,
+    user: &Pubkey,
     mint: &Pubkey,
     amount: u64,
 ) -> Pubkey {
-    let ata = get_associated_token_address(&user.pubkey(), &mint);
+    let ata = get_associated_token_address(&user, &mint);
 
     let token_account = TokenAccount {
         mint: mint.clone(),
-        owner: user.pubkey(),
+        owner: user.clone(),
         amount: amount,
         delegate: COption::None,
         state: AccountState::Initialized,

@@ -53,11 +53,15 @@ pub mod dlmm_vault {
         )
     }
 
-    pub fn dlmm_swap<'a, 'b, 'c, 'info>(
-        ctx: Context<'a, 'b, 'c, 'info, DlmmSwap<'info>>,
-        amount_in: u64,
-        min_amount_out: u64,
+    pub fn dlmm_withdraw<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, DlmmWithdraw<'info>>,
+        token_x_withdraw_amount: u64,
+        token_y_withdraw_amount: u64,
     ) -> Result<()> {
-        instructions::swap::handle_dlmm_swap(ctx, amount_in, min_amount_out)
+        instructions::withdraw::handle_dlmm_withdraw(
+            ctx,
+            token_x_withdraw_amount,
+            token_y_withdraw_amount,
+        )
     }
 }

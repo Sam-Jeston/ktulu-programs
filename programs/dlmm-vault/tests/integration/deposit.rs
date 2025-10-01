@@ -1,14 +1,15 @@
 use anchor_lang::AnchorDeserialize;
+use dlmm_vault::events::deposit::DepositEvent;
 use litesvm::LiteSVM;
 use solana_keypair::{Keypair as SKeypair, Signer as SSigner};
-use solana_sdk::program_pack::Pack;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::{signature::Keypair, signer::Signer};
-use spl_token::state::Account as TokenAccount;
 
 use crate::helpers::account::load_account;
 use crate::helpers::deposit_ix::deposit_vault_ix;
+use crate::helpers::event::find_event;
 use crate::helpers::initialize_ix::initialize_vault_ix;
+use crate::helpers::log::assert_logs_contain;
 use crate::helpers::program::load_dlmm_vault_program;
 use crate::helpers::token::{create_and_fund_token_account, validate_token_account_balance};
 use crate::helpers::transaction::prepare_tx;
@@ -31,10 +32,22 @@ fn test_deposit() {
     load_account(&mut svm, &USDC_USDT_POOL);
     load_account(&mut svm, &USDC_MINT);
     load_account(&mut svm, &USDT_MINT);
-    let user_ata_x =
-        create_and_fund_token_account(&mut svm, &user_clone, &USDC_MINT, 1_000_000_000);
-    let user_ata_y =
-        create_and_fund_token_account(&mut svm, &user_clone, &USDT_MINT, 1_000_000_000);
+
+    let token_x_initial_balance = 1_000_000_000;
+    let token_y_initial_balance = 1_000_000_000;
+
+    let user_ata_x = create_and_fund_token_account(
+        &mut svm,
+        &user_clone.pubkey(),
+        &USDC_MINT,
+        token_x_initial_balance,
+    );
+    let user_ata_y = create_and_fund_token_account(
+        &mut svm,
+        &user_clone.pubkey(),
+        &USDT_MINT,
+        token_y_initial_balance,
+    );
 
     let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) =
         initialize_vault_ix(&user_clone, &USDC_MINT, &USDT_MINT, &USDC_USDT_POOL);
@@ -72,5 +85,85 @@ fn test_deposit() {
     validate_token_account_balance(&mut svm, &vault_ata_x, token_x_deposit_amount);
     validate_token_account_balance(&mut svm, &vault_ata_y, token_y_deposit_amount);
 
-    // TODO: Validate source vault is debited as expected
+    // Validate source vault is debited as expected
+    validate_token_account_balance(
+        &mut svm,
+        &user_ata_x,
+        token_x_initial_balance - token_x_deposit_amount,
+    );
+    validate_token_account_balance(
+        &mut svm,
+        &user_ata_y,
+        token_y_initial_balance - token_y_deposit_amount,
+    );
+
+    let body = find_event(&meta.logs, b"DepositEvent");
+    let ev = DepositEvent::try_from_slice(body.as_slice()).expect("borsh decode");
+    assert_eq!(ev.vault_account, vault_pda);
+    assert_eq!(ev.token_x_deposit_amount, token_x_deposit_amount);
+    assert_eq!(ev.token_y_deposit_amount, token_y_deposit_amount);
+}
+
+#[test]
+fn test_deposit_zero_amount() {
+    let user = SKeypair::new();
+    let user_clone = Keypair::from_bytes(&user.to_bytes()).unwrap();
+
+    let mut svm = LiteSVM::new();
+    load_dlmm_vault_program(&mut svm);
+
+    svm.airdrop(&user_clone.pubkey().to_bytes().into(), 1_000_000_000)
+        .unwrap();
+
+    load_account(&mut svm, &USDC_USDT_POOL);
+    load_account(&mut svm, &USDC_MINT);
+    load_account(&mut svm, &USDT_MINT);
+
+    let token_x_initial_balance = 1_000_000_000;
+    let token_y_initial_balance = 1_000_000_000;
+
+    let user_ata_x = create_and_fund_token_account(
+        &mut svm,
+        &user_clone.pubkey(),
+        &USDC_MINT,
+        token_x_initial_balance,
+    );
+    let user_ata_y = create_and_fund_token_account(
+        &mut svm,
+        &user_clone.pubkey(),
+        &USDT_MINT,
+        token_y_initial_balance,
+    );
+
+    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) =
+        initialize_vault_ix(&user_clone, &USDC_MINT, &USDT_MINT, &USDC_USDT_POOL);
+
+    let token_x_deposit_amount = 10_000;
+    let token_y_deposit_amount = 0;
+
+    let deposit_ix = deposit_vault_ix(
+        &user_clone,
+        &vault_pda,
+        &user_ata_x,
+        &vault_ata_x,
+        &user_ata_y,
+        &vault_ata_y,
+        &USDC_MINT,
+        &USDT_MINT,
+        &anchor_spl::token::ID,
+        &anchor_spl::token::ID,
+        token_x_deposit_amount,
+        token_y_deposit_amount,
+    );
+
+    let tx = prepare_tx(
+        &mut svm,
+        &user.pubkey(),
+        &[&user],
+        &[initialize_ix, deposit_ix],
+    );
+    let sim_res = svm
+        .simulate_transaction(tx.clone())
+        .expect_err("should fail");
+    assert_logs_contain(&sim_res.meta.logs, "InvalidDepositAmount");
 }

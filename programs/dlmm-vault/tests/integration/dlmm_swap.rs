@@ -1,7 +1,6 @@
 use crate::helpers;
-use anchor_lang::{InstructionData, ToAccountMetas, solana_program::pubkey::Pubkey};
+use anchor_lang::{solana_program::pubkey::Pubkey, InstructionData, ToAccountMetas};
 use dlmm_vault::dlmm;
-use helpers::dlmm_pda::*;
 use helpers::dlmm_utils::*;
 use helpers::{process_and_assert_ok, setup_dlmm_vault_program};
 use solana_program_test::*;
@@ -27,57 +26,4 @@ async fn test_dlmm_swap() {
         user_token_x,
         user_token_y,
     } = setup_pool_from_cluster(&mut test, USDC_USDT_POOL, mock_user.pubkey()).await;
-
-    let (mut banks_client, _, _) = test.start().await;
-
-    let ix_data = dlmm_vault::instruction::DlmmSwap {
-        amount_in: 1_000_000,
-        min_amount_out: 0,
-    }
-    .data();
-
-    let mut accounts = dlmm_vault::accounts::DlmmSwap {
-        lb_pair: USDC_USDT_POOL,
-        bin_array_bitmap_extension: None,
-        reserve_x: pool_state.reserve_x,
-        reserve_y: pool_state.reserve_y,
-        user_token_in: user_token_x,
-        user_token_out: user_token_y,
-        token_x_mint: pool_state.token_x_mint,
-        token_y_mint: pool_state.token_y_mint,
-        oracle: pool_state.oracle,
-        host_fee_in: None,
-        user: mock_user.pubkey(),
-        dlmm_program: dlmm::ID,
-        event_authority: derive_event_authority_pda().0,
-        token_x_program: anchor_spl::token::ID,
-        token_y_program: anchor_spl::token::ID,
-    }
-    .to_account_metas(None);
-
-    let (active_bin_array_key, _bump) = derive_bin_array_pda(
-        USDC_USDT_POOL,
-        bin_id_to_bin_array_index(pool_state.active_id)
-            .unwrap()
-            .into(),
-    );
-
-    accounts.push(AccountMeta::new(active_bin_array_key, false));
-
-    let instruction = Instruction {
-        program_id: dlmm_vault::id(),
-        data: ix_data,
-        accounts,
-    };
-
-    process_and_assert_ok(
-        &[
-            ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
-            instruction,
-        ],
-        &mock_user,
-        &[&mock_user],
-        &mut banks_client,
-    )
-    .await;
 }

@@ -1,8 +1,12 @@
 use anchor_lang::prelude::*;
-#[error_code(offset = 0)]
+#[error_code]
 pub enum VaultErrorCode {
     #[msg("Invalid token account")]
-    InvalidTokenAccount = 401,
+    InvalidTokenAccount,
     #[msg("Invalid deposit amount")]
-    InvalidDepositAmount = 402,
+    InvalidDepositAmount,
+    #[msg("Invalid signer")]
+    InvalidSigner,
+    #[msg("Trying to withdraw more than the vault balance for token")]
+    InvalidWithdrawAmount,
 }

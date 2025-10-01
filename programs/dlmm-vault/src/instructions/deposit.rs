@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, TransferChecked};
 
-use crate::{DlmmVaultAccount, VaultErrorCode};
+use crate::{events::deposit::DepositEvent, DlmmVaultAccount, VaultErrorCode};
 
 #[derive(Accounts)]
 pub struct DlmmDeposit<'info> {
@@ -29,6 +29,11 @@ pub fn handle_dlmm_deposit<'a, 'b, 'c, 'info>(
     token_x_deposit_amount: u64,
     token_y_deposit_amount: u64,
 ) -> Result<()> {
+    // Access to deposit is limitted to the owner of the vault
+    if ctx.accounts.signer.key() != ctx.accounts.vault_account.owner {
+        return Err(error!(VaultErrorCode::InvalidSigner));
+    }
+
     // Validate that the vault_owner_token_x account is an ATA for vault_account.token_x_mint
     if ctx.accounts.vault_owner_token_x.mint != ctx.accounts.vault_account.token_x_mint {
         return Err(error!(VaultErrorCode::InvalidTokenAccount));
@@ -63,8 +68,7 @@ pub fn handle_dlmm_deposit<'a, 'b, 'c, 'info>(
                 authority: ctx.accounts.signer.to_account_info(),
                 mint: ctx.accounts.token_x_mint.to_account_info(),
             },
-        )
-        .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
+        ),
         token_x_deposit_amount,
         ctx.accounts.token_x_mint.decimals,
     )?;
@@ -79,11 +83,16 @@ pub fn handle_dlmm_deposit<'a, 'b, 'c, 'info>(
                 authority: ctx.accounts.signer.to_account_info(),
                 mint: ctx.accounts.token_y_mint.to_account_info(),
             },
-        )
-        .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
+        ),
         token_y_deposit_amount,
         ctx.accounts.token_y_mint.decimals,
     )?;
+
+    emit!(DepositEvent {
+        vault_account: ctx.accounts.vault_account.key(),
+        token_x_deposit_amount,
+        token_y_deposit_amount,
+    });
 
     Ok(())
 }
