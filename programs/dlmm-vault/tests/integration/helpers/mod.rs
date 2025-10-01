@@ -2,9 +2,13 @@ use anchor_lang::prelude::*;
 use solana_program_test::*;
 use solana_sdk::{entrypoint::ProgramResult, pubkey::Pubkey};
 
+pub mod account;
 pub mod dlmm_pda;
 pub mod dlmm_utils;
+pub mod event;
 pub mod load_fixture;
+pub mod program;
+pub mod token;
 
 mod utils;
 
