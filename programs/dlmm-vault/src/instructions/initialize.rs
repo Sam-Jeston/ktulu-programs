@@ -2,7 +2,6 @@ use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
-    token_interface::spl_token_metadata_interface::instruction::emit,
 };
 
 use crate::{events::initialize::InitializeEvent, DlmmVaultAccount};

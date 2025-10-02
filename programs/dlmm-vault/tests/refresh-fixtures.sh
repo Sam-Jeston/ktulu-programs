@@ -1,11 +1,13 @@
 # DLMM program
 solana program dump LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo fixtures/dlmm.so
 
-# USDC-USDT DLMM pool
+# Account dumps for USDC-USDT DLMM pool ARwi1S4DaiTG5DX7S4M4ZsrXqpMD1MrTmbu9ue2tpmEq
 solana account ARwi1S4DaiTG5DX7S4M4ZsrXqpMD1MrTmbu9ue2tpmEq --output json > fixtures/ARwi1S4DaiTG5DX7S4M4ZsrXqpMD1MrTmbu9ue2tpmEq.json
-
-# USDC Mint
+solana account TwX5jGEJLu2wspEgEeR6RN4bXZu4JAybWxxpr8M1Ye9 --output json > fixtures/TwX5jGEJLu2wspEgEeR6RN4bXZu4JAybWxxpr8M1Ye9.json
+# Active bin ID: -6
+solana account 9vX5zqnxhWFX7DNqugcGYrTjiDaRt74jaHeKkyhLUTTR --output json > fixtures/9vX5zqnxhWFX7DNqugcGYrTjiDaRt74jaHeKkyhLUTTR.json
+solana account EYazT7p6TMUwFBtUZFAYnDc8Zt1t7NmJHhp6tg2sZyhD --output json > fixtures/EYazT7p6TMUwFBtUZFAYnDc8Zt1t7NmJHhp6tg2sZyhD.json
 solana account EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v --output json > fixtures/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v.json
-
-# USDT Mint
 solana account Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB --output json > fixtures/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB.json
+solana account 4STreSrMtf8umxyei9DaZG4bX3HT9hE3TGw3Xz41XNHd --output json > fixtures/4STreSrMtf8umxyei9DaZG4bX3HT9hE3TGw3Xz41XNHd.json
+solana account GkTrsQsu8WvrbairmN12aUKk74qHivRNFxaT5YxCECKQ --output json > fixtures/GkTrsQsu8WvrbairmN12aUKk74qHivRNFxaT5YxCECKQ.json
