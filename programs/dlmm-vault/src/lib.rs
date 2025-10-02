@@ -64,4 +64,12 @@ pub mod dlmm_vault {
             token_y_withdraw_amount,
         )
     }
+
+    pub fn create_position<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, DlmmCreatePosition<'info>>,
+        lower_bin_id: i32,
+        width: i32,
+    ) -> Result<()> {
+        instructions::create_position::handle_dlmm_create_position(ctx, lower_bin_id, width)
+    }
 }

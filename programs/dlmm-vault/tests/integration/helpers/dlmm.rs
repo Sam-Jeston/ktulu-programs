@@ -43,7 +43,7 @@ fn load_lb_pair_unaligned(acc: &Account) -> anyhow::Result<LbPair> {
     Ok(lbpair)
 }
 
-pub fn load_dlmm_accounts(svm: &mut LiteSVM, pool: &Pubkey) {
+pub fn load_dlmm_accounts(svm: &mut LiteSVM, pool: &Pubkey) -> anyhow::Result<LbPair> {
     let pool_account = load_account(svm, pool);
     let pool_state = load_lb_pair_unaligned(&pool_account).unwrap();
 
@@ -73,4 +73,6 @@ pub fn load_dlmm_accounts(svm: &mut LiteSVM, pool: &Pubkey) {
     for key in reserve_keys.into_iter() {
         load_account(svm, &key);
     }
+
+    Ok(pool_state)
 }

@@ -61,7 +61,7 @@ pub fn handle_dlmm_withdraw<'a, 'b, 'c, 'info>(
         return Err(error!(VaultErrorCode::InvalidWithdrawAmount));
     }
 
-    let (expect, bump) = Pubkey::find_program_address(
+    let (expected_vault_pubkey, bump) = Pubkey::find_program_address(
         &[
             b"dlmm_vault",
             ctx.accounts.signer.key.as_ref(),
@@ -69,7 +69,7 @@ pub fn handle_dlmm_withdraw<'a, 'b, 'c, 'info>(
         ],
         ctx.program_id,
     );
-    require_keys_eq!(expect, ctx.accounts.vault_account.key());
+    require_keys_eq!(expected_vault_pubkey, ctx.accounts.vault_account.key());
 
     if token_x_withdraw_amount > 0 {
         let signer_seeds: &[&[&[u8]]] = &[&[
