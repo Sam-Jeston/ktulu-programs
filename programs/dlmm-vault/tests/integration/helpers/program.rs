@@ -7,3 +7,10 @@ pub fn load_dlmm_vault_program(svm: &mut LiteSVM) -> Pubkey {
     svm.add_program(program_id, program_bytes).unwrap();
     program_id
 }
+
+pub fn load_dlmm_program(svm: &mut LiteSVM) -> Pubkey {
+    let program_bytes = include_bytes!("../../fixtures/dlmm.so");
+    let program_id = pubkey!("LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo");
+    svm.add_program(program_id, program_bytes).unwrap();
+    program_id
+}

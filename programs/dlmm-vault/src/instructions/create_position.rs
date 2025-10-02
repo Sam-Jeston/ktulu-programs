@@ -7,6 +7,7 @@ use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct DlmmCreatePosition<'info> {
+    pub vault_owner: UncheckedAccount<'info>,
     #[account(mut)]
     pub vault_account: Account<'info, DlmmVaultAccount>,
 
@@ -42,11 +43,12 @@ pub fn handle_dlmm_create_position<'a, 'b, 'c, 'info>(
         return Err(error!(VaultErrorCode::InvalidSigner));
     }
 
-    let accounts = dlmm::cpi::accounts::InitializePosition {
+    let accounts = dlmm::cpi::accounts::InitializePositionPda {
         owner: ctx.accounts.vault_account.to_account_info(),
-        payer: ctx.accounts.vault_account.to_account_info(),
-        rent: ctx.accounts.rent.to_account_info(),
+        payer: ctx.accounts.signer.to_account_info(),
+        base: ctx.accounts.vault_owner.to_account_info(),
         system_program: ctx.accounts.system_program.to_account_info(),
+        rent: ctx.accounts.rent.to_account_info(),
         lb_pair: ctx.accounts.lb_pair.to_account_info(),
         position: ctx.accounts.position.to_account_info(),
         event_authority: ctx.accounts.event_authority.to_account_info(),
@@ -74,7 +76,7 @@ pub fn handle_dlmm_create_position<'a, 'b, 'c, 'info>(
         .with_signer(signer_seeds)
         .with_remaining_accounts(ctx.remaining_accounts.to_vec());
 
-    dlmm::cpi::initialize_position(cpi_context, lower_bin_id, width)?;
+    dlmm::cpi::initialize_position_pda(cpi_context, lower_bin_id, width)?;
 
     emit!(CreatePositionEvent {
         vault_account: ctx.accounts.vault_account.key(),

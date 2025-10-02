@@ -14,7 +14,7 @@ use crate::helpers::dlmm_pda::{derive_event_authority_pda, derive_position_pda};
 use crate::helpers::event::find_event;
 use crate::helpers::initialize_ix::initialize_vault_ix;
 use crate::helpers::log::assert_logs_contain;
-use crate::helpers::program::load_dlmm_vault_program;
+use crate::helpers::program::{load_dlmm_program, load_dlmm_vault_program};
 use crate::helpers::token::{create_and_fund_token_account, validate_token_account_balance};
 use crate::helpers::transaction::prepare_tx;
 
@@ -29,6 +29,7 @@ fn test_create_position() {
 
     let mut svm = LiteSVM::new();
     load_dlmm_vault_program(&mut svm);
+    load_dlmm_program(&mut svm);
 
     svm.airdrop(&user_clone.pubkey().to_bytes().into(), 1_000_000_000)
         .unwrap();
@@ -79,9 +80,10 @@ fn test_create_position() {
     let lower_bin_id = pool_state.active_id - 3;
     let width = 5;
 
+    // TODO: Is this right?
     let (position_pda, _bump) = derive_position_pda(
         USDC_USDT_POOL.to_bytes().into(),
-        vault_pda.to_bytes().into(),
+        user_clone.pubkey().to_bytes().into(),
         lower_bin_id,
         width,
     );
