@@ -92,7 +92,7 @@ pub fn add_liquidity_ix(
     .data();
 
     let accounts = dlmm_vault::accounts::DlmmAddLiquidity {
-        vault_owner: user.pubkey(),
+        signer: user.pubkey(),
         vault_account: vault_account.clone(),
         lb_pair: lb_pair.clone(),
         position: position.clone(),
@@ -102,11 +102,10 @@ pub fn add_liquidity_ix(
         token_y_program: token_y_program.clone(),
         bin_array_lower: bin_array_lower.clone(),
         bin_array_upper: bin_array_upper.clone(),
-        sender: vault_account.clone(),
         reserve_x: reserve_x.clone(),
         reserve_y: reserve_y.clone(),
-        user_token_x: user_token_x.clone(),
-        user_token_y: user_token_y.clone(),
+        vault_token_x: user_token_x.clone(),
+        vault_token_y: user_token_y.clone(),
         token_x_mint: token_x_mint.clone(),
         token_y_mint: token_y_mint.clone(),
         oracle: oracle.clone(),

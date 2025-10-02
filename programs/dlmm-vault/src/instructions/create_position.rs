@@ -7,8 +7,10 @@ use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct DlmmCreatePosition<'info> {
-    pub vault_owner: UncheckedAccount<'info>,
-    // #[account(mut)]
+    #[account(
+        seeds = [b"dlmm_vault".as_ref(), vault_account.owner.as_ref(), vault_account.dlmm_pool_id.as_ref()],
+        bump
+    )]
     pub vault_account: Account<'info, DlmmVaultAccount>,
 
     #[account(mut)]
@@ -56,21 +58,11 @@ pub fn handle_dlmm_create_position<'a, 'b, 'c, 'info>(
         program: ctx.accounts.dlmm_program.to_account_info(),
     };
 
-    let (expected_vault_pubkey, bump) = Pubkey::find_program_address(
-        &[
-            b"dlmm_vault",
-            ctx.accounts.vault_owner.key.as_ref(),
-            ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
-        ],
-        ctx.program_id,
-    );
-    require_keys_eq!(expected_vault_pubkey, ctx.accounts.vault_account.key());
-
     let signer_seeds: &[&[&[u8]]] = &[&[
         b"dlmm_vault",
-        ctx.accounts.vault_owner.key.as_ref(),
+        ctx.accounts.vault_account.owner.as_ref(),
         ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
-        &[bump.clone()],
+        &[ctx.bumps.vault_account],
     ]];
 
     let cpi_context = CpiContext::new(ctx.accounts.dlmm_program.to_account_info(), accounts)

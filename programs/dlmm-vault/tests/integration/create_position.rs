@@ -1,11 +1,13 @@
 use anchor_lang::AnchorDeserialize;
 use dlmm_vault::dlmm::types::BinLiquidityDistribution;
+use dlmm_vault::events::add_liquidity::AddLiquidityEvent;
 use dlmm_vault::events::create_position::CreatePositionEvent;
 use dlmm_vault::events::deposit::DepositEvent;
 use litesvm::LiteSVM;
 use solana_keypair::{Keypair as SKeypair, Signer as SSigner};
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::{signature::Keypair, signer::Signer};
+use spl_associated_token_account::get_associated_token_address;
 
 use crate::helpers::account::load_account;
 use crate::helpers::add_liquidity_ix::add_liquidity_ix;
@@ -136,11 +138,23 @@ fn test_create_position() {
         &pool_state.oracle,
         200,
         200,
-        vec![BinLiquidityDistribution {
-            bin_id: pool_state.active_id,
-            distribution_x: 200,
-            distribution_y: 200,
-        }],
+        vec![
+            BinLiquidityDistribution {
+                bin_id: pool_state.active_id - 1,
+                distribution_x: 0,
+                distribution_y: 5000,
+            },
+            BinLiquidityDistribution {
+                bin_id: pool_state.active_id,
+                distribution_x: 5000,
+                distribution_y: 5000,
+            },
+            BinLiquidityDistribution {
+                bin_id: pool_state.active_id + 1,
+                distribution_x: 5000,
+                distribution_y: 0,
+            },
+        ],
     );
 
     let tx = prepare_tx(
@@ -165,4 +179,23 @@ fn test_create_position() {
     assert_eq!(ev.position, position_pda);
     assert_eq!(ev.lower_bin_id, -9);
     assert_eq!(ev.width, 5);
+
+    let body = find_event(&meta.logs, b"AddLiquidityEvent");
+    let ev = AddLiquidityEvent::try_from_slice(body.as_slice()).expect("borsh decode");
+    assert_eq!(ev.vault_account, vault_pda);
+    assert_eq!(ev.token_x_amount, 200);
+    assert_eq!(ev.token_y_amount, 200);
+    assert_eq!(ev.bin_liquidity_dist[0].bin_id, pool_state.active_id - 1);
+    assert_eq!(ev.bin_liquidity_dist[0].distribution_x, 0);
+    assert_eq!(ev.bin_liquidity_dist[0].distribution_y, 5000);
+    assert_eq!(ev.bin_liquidity_dist[1].bin_id, pool_state.active_id);
+    assert_eq!(ev.bin_liquidity_dist[1].distribution_x, 5000);
+    assert_eq!(ev.bin_liquidity_dist[1].distribution_y, 5000);
+    assert_eq!(ev.bin_liquidity_dist[2].bin_id, pool_state.active_id + 1);
+    assert_eq!(ev.bin_liquidity_dist[2].distribution_x, 5000);
+    assert_eq!(ev.bin_liquidity_dist[2].distribution_y, 0);
+
+    // Validate the vault token accounts have been debited
+    validate_token_account_balance(&mut svm, &vault_ata_x, token_x_deposit_amount - 200);
+    validate_token_account_balance(&mut svm, &vault_ata_y, token_y_deposit_amount - 200);
 }

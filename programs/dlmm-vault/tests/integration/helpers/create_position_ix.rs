@@ -23,7 +23,6 @@ pub fn create_position_ix(
     .data();
 
     let accounts = dlmm_vault::accounts::DlmmCreatePosition {
-        vault_owner: user.pubkey(),
         vault_account: vault_account.clone(),
         lb_pair: lb_pair.clone(),
         position: position.clone(),

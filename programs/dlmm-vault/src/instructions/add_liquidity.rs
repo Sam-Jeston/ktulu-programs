@@ -3,13 +3,17 @@ use crate::{
         self,
         types::{BinLiquidityDistribution, LiquidityParameter},
     },
-    DlmmVaultAccount,
+    events::add_liquidity::AddLiquidityEvent,
+    DlmmVaultAccount, VaultErrorCode,
 };
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct DlmmAddLiquidity<'info> {
-    pub vault_owner: UncheckedAccount<'info>,
+    #[account(
+        seeds = [b"dlmm_vault".as_ref(), vault_account.owner.as_ref(), vault_account.dlmm_pool_id.as_ref()],
+        bump
+    )]
     pub vault_account: Account<'info, DlmmVaultAccount>,
     #[account(mut)]
     /// CHECK: The pool account
@@ -27,10 +31,10 @@ pub struct DlmmAddLiquidity<'info> {
 
     #[account(mut)]
     /// CHECK: User token X account
-    pub user_token_x: UncheckedAccount<'info>,
+    pub vault_token_x: UncheckedAccount<'info>,
     #[account(mut)]
     /// CHECK: User token Y account
-    pub user_token_y: UncheckedAccount<'info>,
+    pub vault_token_y: UncheckedAccount<'info>,
 
     /// CHECK: Mint account of token X
     pub token_x_mint: UncheckedAccount<'info>,
@@ -44,8 +48,8 @@ pub struct DlmmAddLiquidity<'info> {
     /// CHECK: The position account to be created
     pub position: UncheckedAccount<'info>,
 
-    /// CHECK: User who's executing the create position. Either the user or vault operator on rebalance
-    pub sender: UncheckedAccount<'info>,
+    // The owner or vault operator performing the add liquidity action
+    pub signer: Signer<'info>,
 
     #[account(address = dlmm::ID)]
     /// CHECK: DLMM program
@@ -72,6 +76,13 @@ pub fn handle_dlmm_add_liquidity<'a, 'b, 'c, 'info>(
     amount_y: u64,
     bin_liquidity_dist: Vec<BinLiquidityDistribution>,
 ) -> Result<()> {
+    // Position creation is valid for both the owner and the operator
+    let signer_is_owner = ctx.accounts.signer.key() == ctx.accounts.vault_account.owner;
+    let signer_is_operator = ctx.accounts.signer.key() == ctx.accounts.vault_account.operator;
+    if !signer_is_owner && !signer_is_operator {
+        return Err(error!(VaultErrorCode::InvalidSigner));
+    }
+
     let accounts = dlmm::cpi::accounts::AddLiquidity {
         lb_pair: ctx.accounts.lb_pair.to_account_info(),
         bin_array_bitmap_extension: ctx
@@ -81,12 +92,12 @@ pub fn handle_dlmm_add_liquidity<'a, 'b, 'c, 'info>(
             .map(|account| account.to_account_info()),
         reserve_x: ctx.accounts.reserve_x.to_account_info(),
         reserve_y: ctx.accounts.reserve_y.to_account_info(),
-        user_token_x: ctx.accounts.user_token_x.to_account_info(),
-        user_token_y: ctx.accounts.user_token_y.to_account_info(),
+        user_token_x: ctx.accounts.vault_token_x.to_account_info(),
+        user_token_y: ctx.accounts.vault_token_y.to_account_info(),
         token_x_mint: ctx.accounts.token_x_mint.to_account_info(),
         token_y_mint: ctx.accounts.token_y_mint.to_account_info(),
         position: ctx.accounts.position.to_account_info(),
-        sender: ctx.accounts.sender.to_account_info(),
+        sender: ctx.accounts.vault_account.to_account_info(),
         token_x_program: ctx.accounts.token_x_program.to_account_info(),
         token_y_program: ctx.accounts.token_y_program.to_account_info(),
         event_authority: ctx.accounts.event_authority.to_account_info(),
@@ -95,21 +106,11 @@ pub fn handle_dlmm_add_liquidity<'a, 'b, 'c, 'info>(
         bin_array_upper: ctx.accounts.bin_array_upper.to_account_info(),
     };
 
-    let (expected_vault_pubkey, bump) = Pubkey::find_program_address(
-        &[
-            b"dlmm_vault",
-            ctx.accounts.vault_owner.key.as_ref(),
-            ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
-        ],
-        ctx.program_id,
-    );
-    require_keys_eq!(expected_vault_pubkey, ctx.accounts.vault_account.key());
-
     let signer_seeds: &[&[&[u8]]] = &[&[
         b"dlmm_vault",
-        ctx.accounts.vault_owner.key.as_ref(),
+        ctx.accounts.vault_account.owner.as_ref(),
         ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
-        &[bump.clone()],
+        &[ctx.bumps.vault_account],
     ]];
 
     let cpi_context = CpiContext::new(ctx.accounts.dlmm_program.to_account_info(), accounts)
@@ -119,8 +120,17 @@ pub fn handle_dlmm_add_liquidity<'a, 'b, 'c, 'info>(
     let liquidity_parameter = LiquidityParameter {
         amount_x,
         amount_y,
-        bin_liquidity_dist,
+        bin_liquidity_dist: bin_liquidity_dist.clone(),
     };
 
-    dlmm::cpi::add_liquidity(cpi_context, liquidity_parameter)
+    dlmm::cpi::add_liquidity(cpi_context, liquidity_parameter)?;
+
+    emit!(AddLiquidityEvent {
+        vault_account: ctx.accounts.vault_account.key(),
+        token_x_amount: amount_x,
+        token_y_amount: amount_y,
+        bin_liquidity_dist,
+    });
+
+    Ok(())
 }
