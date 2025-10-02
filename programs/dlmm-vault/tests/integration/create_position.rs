@@ -1,4 +1,5 @@
 use anchor_lang::AnchorDeserialize;
+use dlmm_vault::dlmm::types::BinLiquidityDistribution;
 use dlmm_vault::events::create_position::CreatePositionEvent;
 use dlmm_vault::events::deposit::DepositEvent;
 use litesvm::LiteSVM;
@@ -7,10 +8,13 @@ use solana_sdk::pubkey::Pubkey;
 use solana_sdk::{signature::Keypair, signer::Signer};
 
 use crate::helpers::account::load_account;
+use crate::helpers::add_liquidity_ix::add_liquidity_ix;
 use crate::helpers::create_position_ix::create_position_ix;
 use crate::helpers::deposit_ix::deposit_vault_ix;
-use crate::helpers::dlmm::load_dlmm_accounts;
-use crate::helpers::dlmm_pda::{derive_event_authority_pda, derive_position_pda};
+use crate::helpers::dlmm::{bin_id_to_bin_array_index, load_dlmm_accounts};
+use crate::helpers::dlmm_pda::{
+    derive_bin_array_pda, derive_event_authority_pda, derive_position_pda,
+};
 use crate::helpers::event::find_event;
 use crate::helpers::initialize_ix::initialize_vault_ix;
 use crate::helpers::log::assert_logs_contain;
@@ -83,7 +87,7 @@ fn test_create_position() {
     // TODO: Is this right?
     let (position_pda, _bump) = derive_position_pda(
         USDC_USDT_POOL.to_bytes().into(),
-        user_clone.pubkey().to_bytes().into(),
+        vault_pda.to_bytes().into(),
         lower_bin_id,
         width,
     );
@@ -103,21 +107,62 @@ fn test_create_position() {
         width,
     );
 
+    // TODO: Move to own test
+    let bin_id = pool_state.active_id;
+    let active_bin_array_idx = bin_id_to_bin_array_index(bin_id).unwrap();
+    let (bin_array_key, _bump) = derive_bin_array_pda(USDC_USDT_POOL, active_bin_array_idx.into());
+
+    let (top_bin_array_key, _bump) =
+        derive_bin_array_pda(USDC_USDT_POOL, (active_bin_array_idx + 1).into());
+
+    let add_liquidity_ix = add_liquidity_ix(
+        &user_clone,
+        &vault_pda,
+        &USDC_USDT_POOL,
+        &None,
+        &pool_state.reserve_x,
+        &pool_state.reserve_y,
+        &vault_ata_x,
+        &vault_ata_y,
+        &USDC_MINT,
+        &USDT_MINT,
+        &position_pda,
+        &anchor_spl::token::ID,
+        &anchor_spl::token::ID,
+        &event_authority_pda,
+        &dlmm_vault::dlmm::ID,
+        &bin_array_key,
+        &top_bin_array_key,
+        &pool_state.oracle,
+        200,
+        200,
+        vec![BinLiquidityDistribution {
+            bin_id: pool_state.active_id,
+            distribution_x: 200,
+            distribution_y: 200,
+        }],
+    );
+
     let tx = prepare_tx(
         &mut svm,
         &user.pubkey(),
         &[&user],
-        &[initialize_ix, deposit_ix, create_position_ix],
+        &[
+            initialize_ix,
+            deposit_ix,
+            create_position_ix,
+            add_liquidity_ix,
+        ],
     );
     let sim_res = svm.simulate_transaction(tx.clone()).unwrap();
     let meta = svm.send_transaction(tx).unwrap();
     assert_eq!(sim_res.meta, meta);
-    assert!(meta.compute_units_consumed < 200_000);
+    assert!(meta.compute_units_consumed < 300_000);
 
     let body = find_event(&meta.logs, b"CreatePositionEvent");
     let ev = CreatePositionEvent::try_from_slice(body.as_slice()).expect("borsh decode");
     assert_eq!(ev.vault_account, vault_pda);
     assert_eq!(ev.position, position_pda);
-    assert_eq!(ev.lower_bin_id, -10);
+    assert_eq!(ev.lower_bin_id, -9);
     assert_eq!(ev.width, 5);
 }

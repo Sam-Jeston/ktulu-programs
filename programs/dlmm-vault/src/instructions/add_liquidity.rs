@@ -1,11 +1,16 @@
-use crate::dlmm::{
-    self,
-    types::{BinLiquidityDistribution, LiquidityParameter},
+use crate::{
+    dlmm::{
+        self,
+        types::{BinLiquidityDistribution, LiquidityParameter},
+    },
+    DlmmVaultAccount,
 };
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct DlmmAddLiquidity<'info> {
+    pub vault_owner: UncheckedAccount<'info>,
+    pub vault_account: Account<'info, DlmmVaultAccount>,
     #[account(mut)]
     /// CHECK: The pool account
     pub lb_pair: UncheckedAccount<'info>,
@@ -32,7 +37,6 @@ pub struct DlmmAddLiquidity<'info> {
     /// CHECK: Mint account of token Y
     pub token_y_mint: UncheckedAccount<'info>,
 
-    #[account(mut)]
     /// CHECK: Oracle account of the pool
     pub oracle: UncheckedAccount<'info>,
 
@@ -41,7 +45,7 @@ pub struct DlmmAddLiquidity<'info> {
     pub position: UncheckedAccount<'info>,
 
     /// CHECK: User who's executing the create position. Either the user or vault operator on rebalance
-    pub sender: Signer<'info>,
+    pub sender: UncheckedAccount<'info>,
 
     #[account(address = dlmm::ID)]
     /// CHECK: DLMM program
@@ -55,8 +59,10 @@ pub struct DlmmAddLiquidity<'info> {
     /// CHECK: Token program of mint Y
     pub token_y_program: UncheckedAccount<'info>,
     /// CHECK: Bin array lower account
+    #[account(mut)]
     pub bin_array_lower: UncheckedAccount<'info>,
     /// CHECK: Bin array upper account
+    #[account(mut)]
     pub bin_array_upper: UncheckedAccount<'info>,
 }
 
@@ -89,7 +95,25 @@ pub fn handle_dlmm_add_liquidity<'a, 'b, 'c, 'info>(
         bin_array_upper: ctx.accounts.bin_array_upper.to_account_info(),
     };
 
+    let (expected_vault_pubkey, bump) = Pubkey::find_program_address(
+        &[
+            b"dlmm_vault",
+            ctx.accounts.vault_owner.key.as_ref(),
+            ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
+        ],
+        ctx.program_id,
+    );
+    require_keys_eq!(expected_vault_pubkey, ctx.accounts.vault_account.key());
+
+    let signer_seeds: &[&[&[u8]]] = &[&[
+        b"dlmm_vault",
+        ctx.accounts.vault_owner.key.as_ref(),
+        ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
+        &[bump.clone()],
+    ]];
+
     let cpi_context = CpiContext::new(ctx.accounts.dlmm_program.to_account_info(), accounts)
+        .with_signer(signer_seeds)
         .with_remaining_accounts(ctx.remaining_accounts.to_vec());
 
     let liquidity_parameter = LiquidityParameter {

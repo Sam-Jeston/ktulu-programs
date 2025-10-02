@@ -16,11 +16,13 @@ pub mod events;
 pub use events::*;
 
 declare_program!(dlmm);
+use crate::dlmm::types::BinLiquidityDistribution;
 
 declare_id!("7Y1iiXP68seqhZtyQ1fEwxCYJVmJztwvXBBnZvRn3DyC");
 
 #[program]
 pub mod dlmm_vault {
+
     use super::*;
 
     pub fn initialize<'a, 'b, 'c, 'info>(
@@ -71,5 +73,19 @@ pub mod dlmm_vault {
         width: i32,
     ) -> Result<()> {
         instructions::create_position::handle_dlmm_create_position(ctx, lower_bin_id, width)
+    }
+
+    pub fn add_liquidity<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, DlmmAddLiquidity<'info>>,
+        amount_x: u64,
+        amount_y: u64,
+        bin_liquidity_dist: Vec<BinLiquidityDistribution>,
+    ) -> Result<()> {
+        instructions::add_liquidity::handle_dlmm_add_liquidity(
+            ctx,
+            amount_x,
+            amount_y,
+            bin_liquidity_dist,
+        )
     }
 }

@@ -8,7 +8,7 @@ use anchor_lang::prelude::*;
 #[derive(Accounts)]
 pub struct DlmmCreatePosition<'info> {
     pub vault_owner: UncheckedAccount<'info>,
-    #[account(mut)]
+    // #[account(mut)]
     pub vault_account: Account<'info, DlmmVaultAccount>,
 
     #[account(mut)]
@@ -46,7 +46,8 @@ pub fn handle_dlmm_create_position<'a, 'b, 'c, 'info>(
     let accounts = dlmm::cpi::accounts::InitializePositionPda {
         owner: ctx.accounts.vault_account.to_account_info(),
         payer: ctx.accounts.signer.to_account_info(),
-        base: ctx.accounts.vault_owner.to_account_info(),
+        // TODO: Is this right??
+        base: ctx.accounts.vault_account.to_account_info(),
         system_program: ctx.accounts.system_program.to_account_info(),
         rent: ctx.accounts.rent.to_account_info(),
         lb_pair: ctx.accounts.lb_pair.to_account_info(),
@@ -58,7 +59,7 @@ pub fn handle_dlmm_create_position<'a, 'b, 'c, 'info>(
     let (expected_vault_pubkey, bump) = Pubkey::find_program_address(
         &[
             b"dlmm_vault",
-            ctx.accounts.signer.key.as_ref(),
+            ctx.accounts.vault_owner.key.as_ref(),
             ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
         ],
         ctx.program_id,
@@ -67,7 +68,7 @@ pub fn handle_dlmm_create_position<'a, 'b, 'c, 'info>(
 
     let signer_seeds: &[&[&[u8]]] = &[&[
         b"dlmm_vault",
-        ctx.accounts.signer.key.as_ref(),
+        ctx.accounts.vault_owner.key.as_ref(),
         ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
         &[bump.clone()],
     ]];
