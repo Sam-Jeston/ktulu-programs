@@ -41,16 +41,24 @@ fn test_deposit() {
         &user_clone.pubkey(),
         &USDC_MINT,
         token_x_initial_balance,
+        &anchor_spl::token::ID,
     );
     let user_ata_y = create_and_fund_token_account(
         &mut svm,
         &user_clone.pubkey(),
         &USDT_MINT,
         token_y_initial_balance,
+        &anchor_spl::token::ID,
     );
 
-    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) =
-        initialize_vault_ix(&user_clone, &USDC_MINT, &USDT_MINT, &USDC_USDT_POOL);
+    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) = initialize_vault_ix(
+        &user_clone,
+        &USDC_MINT,
+        &USDT_MINT,
+        &USDC_USDT_POOL,
+        &anchor_spl::token::ID,
+        &anchor_spl::token::ID,
+    );
 
     let token_x_deposit_amount = 10_000;
     let token_y_deposit_amount = 5_000;
@@ -127,16 +135,24 @@ fn test_deposit_zero_amount() {
         &user_clone.pubkey(),
         &USDC_MINT,
         token_x_initial_balance,
+        &anchor_spl::token::ID,
     );
     let user_ata_y = create_and_fund_token_account(
         &mut svm,
         &user_clone.pubkey(),
         &USDT_MINT,
         token_y_initial_balance,
+        &anchor_spl::token::ID,
     );
 
-    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) =
-        initialize_vault_ix(&user_clone, &USDC_MINT, &USDT_MINT, &USDC_USDT_POOL);
+    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) = initialize_vault_ix(
+        &user_clone,
+        &USDC_MINT,
+        &USDT_MINT,
+        &USDC_USDT_POOL,
+        &anchor_spl::token::ID,
+        &anchor_spl::token::ID,
+    );
 
     let token_x_deposit_amount = 10_000;
     let token_y_deposit_amount = 0;

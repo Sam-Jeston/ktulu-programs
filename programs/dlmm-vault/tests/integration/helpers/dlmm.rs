@@ -5,7 +5,6 @@ use bytemuck::pod_read_unaligned;
 use dlmm_vault::dlmm::accounts::LbPair;
 use litesvm::LiteSVM;
 use solana_account::Account;
-use solana_client::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::helpers::{

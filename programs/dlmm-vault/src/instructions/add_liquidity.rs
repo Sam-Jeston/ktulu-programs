@@ -1,12 +1,16 @@
 use crate::{
     dlmm::{
         self,
-        types::{BinLiquidityDistribution, LiquidityParameter},
+        types::{
+            AccountsType, BinLiquidityDistribution, LiquidityParameter, RemainingAccountsInfo,
+            RemainingAccountsSlice,
+        },
     },
     events::add_liquidity::AddLiquidityEvent,
     DlmmVaultAccount, VaultErrorCode,
 };
 use anchor_lang::prelude::*;
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface, TransferChecked};
 
 #[derive(Accounts)]
 pub struct DlmmAddLiquidity<'info> {
@@ -24,22 +28,22 @@ pub struct DlmmAddLiquidity<'info> {
 
     #[account(mut)]
     /// CHECK: Reserve account of token X
-    pub reserve_x: UncheckedAccount<'info>,
+    pub reserve_x: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
     /// CHECK: Reserve account of token Y
-    pub reserve_y: UncheckedAccount<'info>,
+    pub reserve_y: InterfaceAccount<'info, TokenAccount>,
 
     #[account(mut)]
     /// CHECK: User token X account
-    pub vault_token_x: UncheckedAccount<'info>,
+    pub vault_token_x: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
     /// CHECK: User token Y account
-    pub vault_token_y: UncheckedAccount<'info>,
+    pub vault_token_y: InterfaceAccount<'info, TokenAccount>,
 
     /// CHECK: Mint account of token X
-    pub token_x_mint: UncheckedAccount<'info>,
+    pub token_x_mint: InterfaceAccount<'info, Mint>,
     /// CHECK: Mint account of token Y
-    pub token_y_mint: UncheckedAccount<'info>,
+    pub token_y_mint: InterfaceAccount<'info, Mint>,
 
     /// CHECK: Oracle account of the pool
     pub oracle: UncheckedAccount<'info>,
@@ -59,9 +63,9 @@ pub struct DlmmAddLiquidity<'info> {
     pub event_authority: UncheckedAccount<'info>,
 
     /// CHECK: Token program of mint X
-    pub token_x_program: UncheckedAccount<'info>,
+    pub token_x_program: Interface<'info, TokenInterface>,
     /// CHECK: Token program of mint Y
-    pub token_y_program: UncheckedAccount<'info>,
+    pub token_y_program: Interface<'info, TokenInterface>,
     /// CHECK: Bin array lower account
     #[account(mut)]
     pub bin_array_lower: UncheckedAccount<'info>,
@@ -83,7 +87,7 @@ pub fn handle_dlmm_add_liquidity<'a, 'b, 'c, 'info>(
         return Err(error!(VaultErrorCode::InvalidSigner));
     }
 
-    let accounts = dlmm::cpi::accounts::AddLiquidity {
+    let accounts = dlmm::cpi::accounts::AddLiquidity2 {
         lb_pair: ctx.accounts.lb_pair.to_account_info(),
         bin_array_bitmap_extension: ctx
             .accounts
@@ -102,8 +106,6 @@ pub fn handle_dlmm_add_liquidity<'a, 'b, 'c, 'info>(
         token_y_program: ctx.accounts.token_y_program.to_account_info(),
         event_authority: ctx.accounts.event_authority.to_account_info(),
         program: ctx.accounts.dlmm_program.to_account_info(),
-        bin_array_lower: ctx.accounts.bin_array_lower.to_account_info(),
-        bin_array_upper: ctx.accounts.bin_array_upper.to_account_info(),
     };
 
     let signer_seeds: &[&[&[u8]]] = &[&[
@@ -113,9 +115,13 @@ pub fn handle_dlmm_add_liquidity<'a, 'b, 'c, 'info>(
         &[ctx.bumps.vault_account],
     ]];
 
+    let mut rem: Vec<AccountInfo<'info>> = Vec::with_capacity(2);
+    rem.push(ctx.accounts.bin_array_lower.to_account_info());
+    rem.push(ctx.accounts.bin_array_upper.to_account_info());
+
     let cpi_context = CpiContext::new(ctx.accounts.dlmm_program.to_account_info(), accounts)
         .with_signer(signer_seeds)
-        .with_remaining_accounts(ctx.remaining_accounts.to_vec());
+        .with_remaining_accounts(rem);
 
     let liquidity_parameter = LiquidityParameter {
         amount_x,
@@ -123,7 +129,11 @@ pub fn handle_dlmm_add_liquidity<'a, 'b, 'c, 'info>(
         bin_liquidity_dist: bin_liquidity_dist.clone(),
     };
 
-    dlmm::cpi::add_liquidity(cpi_context, liquidity_parameter)?;
+    // Explicitly have no support for any Token2022 hooks at this point in time. Vaults initialization ensures
+    // that if the token is token2022, that it has no extensions
+    let remaining_accounts_info = RemainingAccountsInfo { slices: vec![] };
+
+    dlmm::cpi::add_liquidity2(cpi_context, liquidity_parameter, remaining_accounts_info)?;
 
     emit!(AddLiquidityEvent {
         vault_account: ctx.accounts.vault_account.key(),

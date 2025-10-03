@@ -1,10 +1,8 @@
 use litesvm::LiteSVM;
 use solana_account::Account;
 use solana_pubkey::Pubkey as SPubkey;
-use solana_sdk::{
-    program_option::COption, program_pack::Pack, pubkey::Pubkey, signature::Keypair, signer::Signer,
-};
-use spl_associated_token_account::get_associated_token_address;
+use solana_sdk::{program_option::COption, program_pack::Pack, pubkey::Pubkey};
+use spl_associated_token_account::get_associated_token_address_with_program_id;
 use spl_token::state::{Account as TokenAccount, AccountState};
 
 pub fn create_and_fund_token_account(
@@ -12,8 +10,9 @@ pub fn create_and_fund_token_account(
     user: &Pubkey,
     mint: &Pubkey,
     amount: u64,
+    token_program: &Pubkey,
 ) -> Pubkey {
-    let ata = get_associated_token_address(&user, &mint);
+    let ata = get_associated_token_address_with_program_id(&user, &mint, token_program);
 
     let token_account = TokenAccount {
         mint: mint.clone(),
@@ -33,7 +32,7 @@ pub fn create_and_fund_token_account(
         Account {
             lamports: 1_000_000_000,
             data: token_acc_bytes.to_vec(),
-            owner: anchor_spl::token::ID.to_bytes().into(),
+            owner: token_program.to_bytes().into(),
             executable: false,
             rent_epoch: 0,
         },

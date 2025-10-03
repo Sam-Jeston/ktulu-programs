@@ -27,16 +27,12 @@ pub mod dlmm_vault {
 
     pub fn initialize<'a, 'b, 'c, 'info>(
         ctx: Context<'a, 'b, 'c, 'info, Initialize<'info>>,
-        token_x_mint: Pubkey,
-        token_y_mint: Pubkey,
         lower_price_range_bps: u64,
         upper_price_range_bps: u64,
         operator: Pubkey,
     ) -> Result<()> {
         instructions::initialize::handle_initialize(
             ctx,
-            token_x_mint,
-            token_y_mint,
             lower_price_range_bps,
             upper_price_range_bps,
             operator,

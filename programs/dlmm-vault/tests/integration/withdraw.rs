@@ -42,16 +42,24 @@ fn test_withdraw() {
         &user_clone.pubkey(),
         &USDC_MINT,
         token_x_initial_balance,
+        &anchor_spl::token::ID,
     );
     let user_ata_y = create_and_fund_token_account(
         &mut svm,
         &user_clone.pubkey(),
         &USDT_MINT,
         token_y_initial_balance,
+        &anchor_spl::token::ID,
     );
 
-    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) =
-        initialize_vault_ix(&user_clone, &USDC_MINT, &USDT_MINT, &USDC_USDT_POOL);
+    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) = initialize_vault_ix(
+        &user_clone,
+        &USDC_MINT,
+        &USDT_MINT,
+        &USDC_USDT_POOL,
+        &anchor_spl::token::ID,
+        &anchor_spl::token::ID,
+    );
 
     // Submit our init tx to initialize the vault account
     let init_tx = prepare_tx(&mut svm, &user.pubkey(), &[&user], &[initialize_ix]);
@@ -60,8 +68,20 @@ fn test_withdraw() {
     // Fund vault ATAs and execute withdrawal
     let token_x_vault_balance = 11_000;
     let token_y_vault_balance = 21_000;
-    create_and_fund_token_account(&mut svm, &vault_pda, &USDC_MINT, token_x_vault_balance);
-    create_and_fund_token_account(&mut svm, &vault_pda, &USDT_MINT, token_y_vault_balance);
+    create_and_fund_token_account(
+        &mut svm,
+        &vault_pda,
+        &USDC_MINT,
+        token_x_vault_balance,
+        &anchor_spl::token::ID,
+    );
+    create_and_fund_token_account(
+        &mut svm,
+        &vault_pda,
+        &USDT_MINT,
+        token_y_vault_balance,
+        &anchor_spl::token::ID,
+    );
 
     let token_x_withdraw_amount = 10_000;
     let token_y_withdraw_amount = 5_000;

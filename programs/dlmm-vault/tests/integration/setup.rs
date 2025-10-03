@@ -47,22 +47,22 @@ fn print_account_dump(pubkey: &Pubkey) {
 }
 
 const RPC: &str = "https://api.mainnet-beta.solana.com";
-const USDC_USDT_POOL: Pubkey = solana_sdk::pubkey!("ARwi1S4DaiTG5DX7S4M4ZsrXqpMD1MrTmbu9ue2tpmEq");
+const PUMP_USDC_POOL: Pubkey = solana_sdk::pubkey!("9SMp4yLKGtW9TnLimfVPkDARsyNSfJw43WMke4r7KoZj");
 
 // The stdout from this test is added to ./refresh-fixtures.sh to allow the tests
 // to test against the pool provided
 #[test]
 pub fn setup_pool_from_cluster() {
     println!(
-        "# Account dumps for USDC-USDT DLMM pool ARwi1S4DaiTG5DX7S4M4ZsrXqpMD1MrTmbu9ue2tpmEq"
+        "# Account dumps for PUMP-USDC DLMM pool 9SMp4yLKGtW9TnLimfVPkDARsyNSfJw43WMke4r7KoZj"
     );
     let rpc_client = RpcClient::new(RPC.to_owned());
-    let pool_account = rpc_client.get_account(&USDC_USDT_POOL).unwrap();
-    print_account_dump(&USDC_USDT_POOL);
+    let pool_account = rpc_client.get_account(&PUMP_USDC_POOL).unwrap();
+    print_account_dump(&PUMP_USDC_POOL);
 
     let pool_state = load_lb_pair_unaligned(&pool_account).unwrap();
 
-    let (oracle_key, _bump) = derive_oracle_pda(USDC_USDT_POOL);
+    let (oracle_key, _bump) = derive_oracle_pda(PUMP_USDC_POOL);
     print_account_dump(&oracle_key);
 
     println!("# Active bin ID: {}", pool_state.active_id);
@@ -73,7 +73,7 @@ pub fn setup_pool_from_cluster() {
         let bin_id = pool_state.active_id + i;
         let active_bin_array_idx = bin_id_to_bin_array_index(bin_id).unwrap();
         let (bin_array_key, _bump) =
-            derive_bin_array_pda(USDC_USDT_POOL, active_bin_array_idx.into());
+            derive_bin_array_pda(PUMP_USDC_POOL, active_bin_array_idx.into());
         bin_array_keys.insert(bin_array_key);
     }
 

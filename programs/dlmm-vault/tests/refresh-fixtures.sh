@@ -1,3 +1,5 @@
+rm -r fixtures/*
+
 # DLMM program
 solana program dump LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo fixtures/dlmm.so
 
@@ -11,3 +13,13 @@ solana account EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v --output json > fixt
 solana account Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB --output json > fixtures/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB.json
 solana account 4STreSrMtf8umxyei9DaZG4bX3HT9hE3TGw3Xz41XNHd --output json > fixtures/4STreSrMtf8umxyei9DaZG4bX3HT9hE3TGw3Xz41XNHd.json
 solana account GkTrsQsu8WvrbairmN12aUKk74qHivRNFxaT5YxCECKQ --output json > fixtures/GkTrsQsu8WvrbairmN12aUKk74qHivRNFxaT5YxCECKQ.json
+
+# Account dumps for PUMP-USDC DLMM pool 9SMp4yLKGtW9TnLimfVPkDARsyNSfJw43WMke4r7KoZj
+solana account 9SMp4yLKGtW9TnLimfVPkDARsyNSfJw43WMke4r7KoZj --output json > fixtures/9SMp4yLKGtW9TnLimfVPkDARsyNSfJw43WMke4r7KoZj.json
+solana account B15Maa1RWTLn1HY178S7aMCBxwUKZ7XKWtDf8D2gtA3j --output json > fixtures/B15Maa1RWTLn1HY178S7aMCBxwUKZ7XKWtDf8D2gtA3j.json
+# Active bin ID: -2492
+solana account 6kHCaRgYW9NvnawXFWKhcBFVw6aJrN95z1eYq9s15sfQ --output json > fixtures/6kHCaRgYW9NvnawXFWKhcBFVw6aJrN95z1eYq9s15sfQ.json
+solana account pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn --output json > fixtures/pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn.json
+solana account EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v --output json > fixtures/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v.json
+solana account 6uVEyA1RRhuTzDroFGBrDsAHwE4b6hCSwgyXAHjTZEUv --output json > fixtures/6uVEyA1RRhuTzDroFGBrDsAHwE4b6hCSwgyXAHjTZEUv.json
+solana account 5RLzTiyGuadAC4SE3s7MGonXszFShJtZewVmmHGUUbkV --output json > fixtures/5RLzTiyGuadAC4SE3s7MGonXszFShJtZewVmmHGUUbkV.json

@@ -30,8 +30,14 @@ fn test_initialize() {
     load_account(&mut svm, &USDC_MINT);
     load_account(&mut svm, &USDT_MINT);
 
-    let (initialize_ix, vault_pda, _, _) =
-        initialize_vault_ix(&user_clone, &USDC_MINT, &USDT_MINT, &USDC_USDT_POOL);
+    let (initialize_ix, vault_pda, _, _) = initialize_vault_ix(
+        &user_clone,
+        &USDC_MINT,
+        &USDT_MINT,
+        &USDC_USDT_POOL,
+        &anchor_spl::token::ID,
+        &anchor_spl::token::ID,
+    );
 
     let tx = prepare_tx(&mut svm, &user.pubkey(), &[&user], &[initialize_ix]);
     let sim_res = svm.simulate_transaction(tx.clone()).unwrap();

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Mint, Token, TokenAccount, TransferChecked};
+use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
 
 use crate::{events::deposit::DepositEvent, DlmmVaultAccount, VaultErrorCode};
 
@@ -9,19 +9,19 @@ pub struct DlmmDeposit<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
-    pub token_x_mint: Account<'info, Mint>,
+    pub token_x_mint: InterfaceAccount<'info, Mint>,
     #[account(mut)]
-    pub vault_owner_token_x: Account<'info, TokenAccount>,
+    pub vault_owner_token_x: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
-    pub vault_token_x_account: Account<'info, TokenAccount>,
-    pub token_x_program: Program<'info, Token>,
+    pub vault_token_x_account: InterfaceAccount<'info, TokenAccount>,
+    pub token_x_program: Interface<'info, TokenInterface>,
 
-    pub token_y_mint: Account<'info, Mint>,
+    pub token_y_mint: InterfaceAccount<'info, Mint>,
     #[account(mut)]
-    pub vault_owner_token_y: Account<'info, TokenAccount>,
+    pub vault_owner_token_y: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
-    pub vault_token_y_account: Account<'info, TokenAccount>,
-    pub token_y_program: Program<'info, Token>,
+    pub vault_token_y_account: InterfaceAccount<'info, TokenAccount>,
+    pub token_y_program: Interface<'info, TokenInterface>,
 }
 
 pub fn handle_dlmm_deposit<'a, 'b, 'c, 'info>(
@@ -59,7 +59,7 @@ pub fn handle_dlmm_deposit<'a, 'b, 'c, 'info>(
     }
 
     // Transfer from the vault_owner_token_x account to the vault_account.token_x_ata account
-    token::transfer_checked(
+    token_interface::transfer_checked(
         CpiContext::new(
             ctx.accounts.token_x_program.to_account_info(),
             TransferChecked {
@@ -74,7 +74,7 @@ pub fn handle_dlmm_deposit<'a, 'b, 'c, 'info>(
     )?;
 
     // Transfer from the vault_owner_token_y account to the vault_account.token_y_ata account
-    token::transfer_checked(
+    token_interface::transfer_checked(
         CpiContext::new(
             ctx.accounts.token_y_program.to_account_info(),
             TransferChecked {
