@@ -5,6 +5,11 @@ use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, Tran
 
 #[derive(Accounts)]
 pub struct DlmmWithdraw<'info> {
+    #[account(
+        mut,
+        seeds = [b"dlmm_vault".as_ref(), vault_account.owner.as_ref(), vault_account.dlmm_pool_id.as_ref()],
+        bump
+    )]
     pub vault_account: Account<'info, DlmmVaultAccount>,
     #[account(mut)]
     pub signer: Signer<'info>,
@@ -61,22 +66,12 @@ pub fn handle_dlmm_withdraw<'a, 'b, 'c, 'info>(
         return Err(error!(VaultErrorCode::InvalidWithdrawAmount));
     }
 
-    let (expected_vault_pubkey, bump) = Pubkey::find_program_address(
-        &[
-            b"dlmm_vault",
-            ctx.accounts.signer.key.as_ref(),
-            ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
-        ],
-        ctx.program_id,
-    );
-    require_keys_eq!(expected_vault_pubkey, ctx.accounts.vault_account.key());
-
     if token_x_withdraw_amount > 0 {
         let signer_seeds: &[&[&[u8]]] = &[&[
             b"dlmm_vault",
             ctx.accounts.signer.key.as_ref(),
             ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
-            &[bump.clone()],
+            &[ctx.bumps.vault_account],
         ]];
         token_interface::transfer_checked(
             CpiContext::new(
@@ -99,7 +94,7 @@ pub fn handle_dlmm_withdraw<'a, 'b, 'c, 'info>(
             b"dlmm_vault",
             ctx.accounts.signer.key.as_ref(),
             ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
-            &[bump],
+            &[ctx.bumps.vault_account],
         ]];
         token_interface::transfer_checked(
             CpiContext::new(

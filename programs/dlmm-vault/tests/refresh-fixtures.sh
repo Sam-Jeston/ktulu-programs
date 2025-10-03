@@ -1,7 +1,18 @@
 rm -r fixtures/*
-
 # DLMM program
 solana program dump LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo fixtures/dlmm.so
+
+# Jup program
+solana program dump JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4 fixtures/jupiter.so
+
+# Alpha program
+solana program dump ALPHAQmeA7bjrVuccPsYPiCvsi428SNwte66Srvs4pHA fixtures/alpha.so
+
+# Invariant swap program
+solana program dump HyaB3W9q6XdA5xwpU4XnSZV94htfmbmqJXZcEbRaJutt fixtures/invariant_swap.so
+
+# Whirlpool program
+solana program dump whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc fixtures/whirlpool.so
 
 # Account dumps for USDC-USDT DLMM pool ARwi1S4DaiTG5DX7S4M4ZsrXqpMD1MrTmbu9ue2tpmEq
 solana account ARwi1S4DaiTG5DX7S4M4ZsrXqpMD1MrTmbu9ue2tpmEq --output json > fixtures/ARwi1S4DaiTG5DX7S4M4ZsrXqpMD1MrTmbu9ue2tpmEq.json

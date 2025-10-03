@@ -14,3 +14,17 @@ pub fn load_dlmm_program(svm: &mut LiteSVM) -> Pubkey {
     svm.add_program(program_id, program_bytes).unwrap();
     program_id
 }
+
+pub fn load_jupiter_program(svm: &mut LiteSVM) -> Pubkey {
+    let program_bytes = include_bytes!("../../fixtures/jupiter.so");
+    let program_id = pubkey!("JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4");
+    svm.add_program(program_id, program_bytes).unwrap();
+    program_id
+}
+
+pub fn load_whirlpool_program(svm: &mut LiteSVM) -> Pubkey {
+    let program_bytes = include_bytes!("../../fixtures/whirlpool.so");
+    let program_id = pubkey!("whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc");
+    svm.add_program(program_id, program_bytes).unwrap();
+    program_id
+}

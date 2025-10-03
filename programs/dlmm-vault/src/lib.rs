@@ -16,6 +16,7 @@ pub mod events;
 pub use events::*;
 
 declare_program!(dlmm);
+declare_program!(jupiter);
 use crate::dlmm::types::{BinLiquidityDistribution, BinLiquidityReduction};
 
 declare_id!("7Y1iiXP68seqhZtyQ1fEwxCYJVmJztwvXBBnZvRn3DyC");
@@ -93,6 +94,13 @@ pub mod dlmm_vault {
         bin_liquidity_reduction: Vec<BinLiquidityReduction>,
     ) -> Result<()> {
         instructions::remove_liquidity::handle_dlmm_remove_liquidity(ctx, bin_liquidity_reduction)
+    }
+
+    pub fn rebalance<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, Rebalance<'info>>,
+        jup_swap_data: Vec<u8>,
+    ) -> Result<()> {
+        instructions::rebalance::handle_rebalance(ctx, jup_swap_data)
     }
 
     // TODO: Integration tests

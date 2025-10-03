@@ -43,3 +43,4 @@ solana-account = "3.0.0"
 solana-message = "3.0.1"
 solana-transaction = "3.0.1"
 solana-instruction = "3.0.0"
+jup-swap = { git = "https://github.com/jup-ag/jupiter-swap-api-client", package = 'jupiter-swap-api-client', branch = '2.1' }
