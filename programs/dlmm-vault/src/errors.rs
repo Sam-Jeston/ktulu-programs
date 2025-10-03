@@ -9,4 +9,8 @@ pub enum VaultErrorCode {
     InvalidSigner,
     #[msg("Trying to withdraw more than the vault balance for token")]
     InvalidWithdrawAmount,
+    #[msg("Position still open")]
+    PositionStillOpen,
+    #[msg("Non-zero balance")]
+    NonZeroBalance,
 }

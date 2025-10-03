@@ -8,6 +8,7 @@ use anchor_lang::prelude::*;
 #[derive(Accounts)]
 pub struct DlmmCreatePosition<'info> {
     #[account(
+        mut,
         seeds = [b"dlmm_vault".as_ref(), vault_account.owner.as_ref(), vault_account.dlmm_pool_id.as_ref()],
         bump
     )]
@@ -38,6 +39,11 @@ pub fn handle_dlmm_create_position<'a, 'b, 'c, 'info>(
     lower_bin_id: i32,
     width: i32,
 ) -> Result<()> {
+    // We can only create a position if the vault is not already in a position
+    if ctx.accounts.vault_account.in_position {
+        return Err(error!(VaultErrorCode::PositionStillOpen));
+    }
+
     // Position creation is valid for both the owner and the operator
     let signer_is_owner = ctx.accounts.signer.key() == ctx.accounts.vault_account.owner;
     let signer_is_operator = ctx.accounts.signer.key() == ctx.accounts.vault_account.operator;
@@ -70,6 +76,8 @@ pub fn handle_dlmm_create_position<'a, 'b, 'c, 'info>(
         .with_remaining_accounts(ctx.remaining_accounts.to_vec());
 
     dlmm::cpi::initialize_position_pda(cpi_context, lower_bin_id, width)?;
+
+    ctx.accounts.vault_account.in_position = true;
 
     emit!(CreatePositionEvent {
         vault_account: ctx.accounts.vault_account.key(),

@@ -84,4 +84,10 @@ pub mod dlmm_vault {
             bin_liquidity_dist,
         )
     }
+
+    pub fn close_vault<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, CloseVault<'info>>,
+    ) -> Result<()> {
+        instructions::close::handle_close_vault(ctx)
+    }
 }
