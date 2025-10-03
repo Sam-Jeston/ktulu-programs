@@ -144,7 +144,6 @@ fn test_token2022_integration() {
         &dlmm_vault::dlmm::ID,
         &bin_array_key,
         &top_bin_array_key,
-        &pool_state.oracle,
         200,
         200,
         vec![

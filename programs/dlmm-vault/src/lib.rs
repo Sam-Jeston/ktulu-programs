@@ -16,12 +16,14 @@ pub mod events;
 pub use events::*;
 
 declare_program!(dlmm);
-use crate::dlmm::types::BinLiquidityDistribution;
+use crate::dlmm::types::{BinLiquidityDistribution, BinLiquidityReduction};
 
 declare_id!("7Y1iiXP68seqhZtyQ1fEwxCYJVmJztwvXBBnZvRn3DyC");
 
 #[program]
 pub mod dlmm_vault {
+
+    use crate::dlmm::types::BinLiquidityReduction;
 
     use super::*;
 
@@ -85,6 +87,15 @@ pub mod dlmm_vault {
         )
     }
 
+    // TODO: Integration tests
+    pub fn remove_liquidity<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, DlmmRemoveLiquidity<'info>>,
+        bin_liquidity_reduction: Vec<BinLiquidityReduction>,
+    ) -> Result<()> {
+        instructions::remove_liquidity::handle_dlmm_remove_liquidity(ctx, bin_liquidity_reduction)
+    }
+
+    // TODO: Integration tests
     pub fn close_vault<'a, 'b, 'c, 'info>(
         ctx: Context<'a, 'b, 'c, 'info, CloseVault<'info>>,
     ) -> Result<()> {

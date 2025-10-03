@@ -6,6 +6,7 @@ use anchor_spl::token_interface::{
     close_account, CloseAccount, Mint, TokenAccount, TokenInterface,
 };
 
+use crate::close_vault::CloseVaultEvent;
 use crate::{DlmmVaultAccount, VaultErrorCode};
 
 #[derive(Accounts)]
@@ -87,6 +88,10 @@ pub fn handle_close_vault(ctx: Context<CloseVault>) -> Result<()> {
         &ctx.accounts.token_y_program,
         signer,
     )?;
+
+    emit!(CloseVaultEvent {
+        vault_account: ctx.accounts.vault_account.key(),
+    });
 
     Ok(())
 }

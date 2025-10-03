@@ -1,5 +1,7 @@
 pub mod add_liquidity;
+pub mod close_vault;
 pub mod create_position;
 pub mod deposit;
 pub mod initialize;
+pub mod remove_liquidity;
 pub mod withdraw;

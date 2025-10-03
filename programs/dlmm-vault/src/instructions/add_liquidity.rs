@@ -1,16 +1,13 @@
 use crate::{
     dlmm::{
         self,
-        types::{
-            AccountsType, BinLiquidityDistribution, LiquidityParameter, RemainingAccountsInfo,
-            RemainingAccountsSlice,
-        },
+        types::{BinLiquidityDistribution, LiquidityParameter, RemainingAccountsInfo},
     },
     events::add_liquidity::AddLiquidityEvent,
     DlmmVaultAccount, VaultErrorCode,
 };
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface, TransferChecked};
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 #[derive(Accounts)]
 pub struct DlmmAddLiquidity<'info> {
@@ -44,9 +41,6 @@ pub struct DlmmAddLiquidity<'info> {
     pub token_x_mint: InterfaceAccount<'info, Mint>,
     /// CHECK: Mint account of token Y
     pub token_y_mint: InterfaceAccount<'info, Mint>,
-
-    /// CHECK: Oracle account of the pool
-    pub oracle: UncheckedAccount<'info>,
 
     #[account(mut)]
     /// CHECK: The position account to be created

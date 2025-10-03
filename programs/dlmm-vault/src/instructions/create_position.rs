@@ -78,6 +78,7 @@ pub fn handle_dlmm_create_position<'a, 'b, 'c, 'info>(
     dlmm::cpi::initialize_position_pda(cpi_context, lower_bin_id, width)?;
 
     ctx.accounts.vault_account.in_position = true;
+    ctx.accounts.vault_account.position_id = ctx.accounts.position.key();
 
     emit!(CreatePositionEvent {
         vault_account: ctx.accounts.vault_account.key(),

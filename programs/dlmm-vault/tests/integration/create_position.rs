@@ -2,6 +2,7 @@ use anchor_lang::AnchorDeserialize;
 use dlmm_vault::dlmm::types::BinLiquidityDistribution;
 use dlmm_vault::events::add_liquidity::AddLiquidityEvent;
 use dlmm_vault::events::create_position::CreatePositionEvent;
+use dlmm_vault::DlmmVaultAccount;
 use litesvm::LiteSVM;
 use solana_keypair::{Keypair as SKeypair, Signer as SSigner};
 use solana_sdk::pubkey::Pubkey;
@@ -140,7 +141,6 @@ fn test_create_position() {
         &dlmm_vault::dlmm::ID,
         &bin_array_key,
         &top_bin_array_key,
-        &pool_state.oracle,
         200,
         200,
         vec![
@@ -203,4 +203,10 @@ fn test_create_position() {
     // Validate the vault token accounts have been debited
     validate_token_account_balance(&mut svm, &vault_ata_x, token_x_deposit_amount - 200);
     validate_token_account_balance(&mut svm, &vault_ata_y, token_y_deposit_amount - 200);
+
+    // Validate that the DlmmVault account has been updated to in_position = true and has the correct position_id
+    let vault_account = load_account(&mut svm, &vault_pda);
+    let vault_account_data = DlmmVaultAccount::try_from_slice(&vault_account.data).unwrap();
+    assert_eq!(vault_account_data.in_position, true);
+    assert_eq!(vault_account_data.position_id, position_pda);
 }

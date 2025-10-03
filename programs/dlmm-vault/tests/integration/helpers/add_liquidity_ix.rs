@@ -79,7 +79,6 @@ pub fn add_liquidity_ix(
     dlmm_program: &Pubkey,
     bin_array_lower: &Pubkey,
     bin_array_upper: &Pubkey,
-    oracle: &Pubkey,
     amount_x: u64,
     amount_y: u64,
     bin_liquidity_dist: Vec<BinLiquidityDistribution>,
@@ -108,7 +107,6 @@ pub fn add_liquidity_ix(
         vault_token_y: user_token_y.clone(),
         token_x_mint: token_x_mint.clone(),
         token_y_mint: token_y_mint.clone(),
-        oracle: oracle.clone(),
         bin_array_bitmap_extension: bin_array_bitmap_extension.clone(),
     }
     .to_account_metas(None);
