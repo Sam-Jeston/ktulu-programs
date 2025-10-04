@@ -1,4 +1,5 @@
-use anchor_lang::{Id, InstructionData, ToAccountMetas};
+use anchor_lang::{AnchorDeserialize, Id, InstructionData, ToAccountMetas};
+use dlmm_vault::events::rebalance::RebalanceEvent;
 use litesvm::LiteSVM;
 use solana_instruction::account_meta::AccountMeta as SAccountMeta;
 use solana_keypair::{Keypair as SKeypair, Signer as SSigner};
@@ -12,6 +13,7 @@ use spl_token::state::{Account as TokenAccount, AccountState};
 use crate::helpers::account::load_account;
 use crate::helpers::atl::get_address_lookup_table_accounts;
 use crate::helpers::deposit_ix::deposit_vault_ix;
+use crate::helpers::event::find_event;
 use crate::helpers::initialize_ix::initialize_vault_ix;
 use crate::helpers::program::{
     load_dlmm_program, load_dlmm_vault_program, load_jupiter_program, load_whirlpool_program,
@@ -219,7 +221,7 @@ async fn test_rebalance() {
         &address_lookup_table_accounts,
         &[rebalance_ix],
     );
-    svm.send_transaction(tx).unwrap();
+    let meta = svm.send_transaction(tx).unwrap();
 
     // Print the vault token balances after the swap
     let token_account_in = svm.get_account(&vault_ata_x.to_bytes().into()).unwrap();
@@ -227,9 +229,14 @@ async fn test_rebalance() {
     let token_account_out = svm.get_account(&vault_ata_y.to_bytes().into()).unwrap();
     let token_account_data_out = TokenAccount::unpack_from_slice(&token_account_out.data).unwrap();
 
-    println!("Token account in balance: {}", token_account_data_in.amount);
-    println!(
-        "Token account out balance: {}",
-        token_account_data_out.amount
-    );
+    let body = find_event(&meta.logs, b"RebalanceEvent");
+    let ev = RebalanceEvent::try_from_slice(body.as_slice()).expect("failed to borsh decode");
+    assert_eq!(ev.vault_account, vault_pda);
+    assert_eq!(ev.in_mint, USDC_MINT);
+    assert_eq!(ev.out_mint, USDT_MINT);
+    assert_eq!(ev.initial_in_balance, token_x_deposit_amount);
+    assert_eq!(ev.initial_out_balance, token_y_deposit_amount);
+    assert_eq!(ev.final_in_balance, token_account_data_in.amount);
+    assert_eq!(ev.final_out_balance, token_account_data_out.amount);
+    assert_eq!(ev.signer, user_clone.pubkey());
 }

@@ -4,6 +4,7 @@
  - Name project and populate README
  - Remove all `UncheckedAccount` types
  - Ensure Vault and associated token accounts are closeable
+ - Test more Token2022s and implement transfer hooks. HVbpJAQGNpkgBaYBZQBR1t7yFdvaYVp2vCQQfKKEN4tM has transfer hooks
 
 # Misc
 

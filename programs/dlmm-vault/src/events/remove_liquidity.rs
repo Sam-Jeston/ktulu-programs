@@ -6,5 +6,6 @@ use crate::dlmm::types::BinLiquidityReduction;
 #[derive(Debug)]
 pub struct RemoveLiquidityEvent {
     pub vault_account: Pubkey,
+    pub signer: Pubkey,
     pub bin_liquidity_reduction: Vec<BinLiquidityReduction>,
 }

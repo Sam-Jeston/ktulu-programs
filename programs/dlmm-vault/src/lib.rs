@@ -96,6 +96,15 @@ pub mod dlmm_vault {
         instructions::remove_liquidity::handle_dlmm_remove_liquidity(ctx, bin_liquidity_reduction)
     }
 
+    // TODO: Integration tests
+    pub fn claim_fees<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, DlmmClaimFees<'info>>,
+        min_bin_id: i32,
+        max_bin_id: i32,
+    ) -> Result<()> {
+        instructions::claim_fees::handle_dlmm_claim_fees(ctx, min_bin_id, max_bin_id)
+    }
+
     pub fn rebalance<'a, 'b, 'c, 'info>(
         ctx: Context<'a, 'b, 'c, 'info, Rebalance<'info>>,
         jup_swap_data: Vec<u8>,

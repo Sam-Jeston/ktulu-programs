@@ -11,6 +11,8 @@ pub enum VaultErrorCode {
     InvalidWithdrawAmount,
     #[msg("Position still open")]
     PositionStillOpen,
+    #[msg("Position not open")]
+    PositionNotOpen,
     #[msg("Non-zero balance")]
     NonZeroBalance,
 }

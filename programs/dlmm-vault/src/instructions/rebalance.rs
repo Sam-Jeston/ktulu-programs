@@ -5,12 +5,14 @@ use crate::{
         self,
         types::{BinLiquidityDistribution, LiquidityParameter, RemainingAccountsInfo},
     },
-    events::add_liquidity::AddLiquidityEvent,
+    events::{add_liquidity::AddLiquidityEvent, rebalance::RebalanceEvent},
     jupiter::program::Jupiter,
     DlmmVaultAccount, VaultErrorCode,
 };
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::program_pack::Pack;
 use anchor_lang::solana_program::{instruction::Instruction, program::invoke_signed};
+use anchor_spl::token_2022::spl_token_2022::state::Account as SplTokenAccount;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 pub fn jupiter_program_id() -> Pubkey {
@@ -57,6 +59,9 @@ pub fn handle_rebalance<'a, 'b, 'c, 'info>(
 
     require_keys_eq!(*ctx.accounts.jupiter_program.key, jupiter_program_id());
 
+    let initial_in_balance = ctx.accounts.vault_input_token_account.amount;
+    let initial_out_balance = ctx.accounts.vault_output_token_account.amount;
+
     let accounts: Vec<AccountMeta> = ctx
         .remaining_accounts
         .iter()
@@ -93,7 +98,30 @@ pub fn handle_rebalance<'a, 'b, 'c, 'info>(
         signer_seeds,
     )?;
 
-    // TODO: Emit RebalanceEvent
+    // Re-read the token accounts to determine the final balances
+    let final_in_info = ctx.accounts.vault_input_token_account.to_account_info();
+    let final_out_info = ctx.accounts.vault_output_token_account.to_account_info();
+    let final_in_balance = token_amount(&final_in_info)?;
+    let final_out_balance = token_amount(&final_out_info)?;
+
+    emit!(RebalanceEvent {
+        vault_account: ctx.accounts.vault_account.key(),
+        in_mint: ctx.accounts.input_mint.key(),
+        out_mint: ctx.accounts.output_mint.key(),
+        initial_in_balance: initial_in_balance,
+        initial_out_balance: initial_out_balance,
+        final_in_balance: final_in_balance,
+        final_out_balance: final_out_balance,
+        signer: ctx.accounts.signer.key(),
+    });
 
     Ok(())
+}
+
+fn token_amount(ai: &anchor_lang::prelude::AccountInfo) -> Result<u64> {
+    let amt = {
+        let data = ai.try_borrow_data()?;
+        SplTokenAccount::unpack(&data)?.amount
+    };
+    Ok(amt)
 }

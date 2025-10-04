@@ -83,6 +83,7 @@ pub fn handle_dlmm_create_position<'a, 'b, 'c, 'info>(
     emit!(CreatePositionEvent {
         vault_account: ctx.accounts.vault_account.key(),
         position: ctx.accounts.position.key(),
+        signer: ctx.accounts.signer.key(),
         lower_bin_id,
         width,
     });

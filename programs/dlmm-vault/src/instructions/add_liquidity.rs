@@ -131,6 +131,7 @@ pub fn handle_dlmm_add_liquidity<'a, 'b, 'c, 'info>(
 
     emit!(AddLiquidityEvent {
         vault_account: ctx.accounts.vault_account.key(),
+        signer: ctx.accounts.signer.key(),
         token_x_amount: amount_x,
         token_y_amount: amount_y,
         bin_liquidity_dist,

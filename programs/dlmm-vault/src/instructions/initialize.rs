@@ -1,7 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 
-use crate::{events::initialize::InitializeEvent, DlmmVaultAccount};
+use crate::{events::initialize::InitializeEvent, DlmmVaultAccount, VaultErrorCode};
+use anchor_spl::token_2022::spl_token_2022::state::Mint as Token2022Mint;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 #[derive(Accounts)]

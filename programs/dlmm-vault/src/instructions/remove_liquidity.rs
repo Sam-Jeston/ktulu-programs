@@ -125,6 +125,7 @@ pub fn handle_dlmm_remove_liquidity<'a, 'b, 'c, 'info>(
 
     emit!(RemoveLiquidityEvent {
         vault_account: ctx.accounts.vault_account.key(),
+        signer: ctx.accounts.signer.key(),
         bin_liquidity_reduction,
     });
 
