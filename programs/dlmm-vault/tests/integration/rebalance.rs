@@ -75,6 +75,7 @@ async fn test_rebalance() {
 
     let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) = initialize_vault_ix(
         &user_clone,
+        &user_clone,
         &USDC_MINT,
         &USDT_MINT,
         &USDC_USDT_POOL,

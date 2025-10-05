@@ -1,11 +1,11 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use dlmm_vault::dlmm::types::BinLiquidityDistribution;
+use dlmm_vault::dlmm::types::{BinLiquidityDistribution, BinLiquidityReduction};
 use solana_instruction::account_meta::AccountMeta as SAccountMeta;
 use solana_message::Instruction;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::{signature::Keypair, signer::Signer};
 
-pub fn add_liquidity_ix(
+pub fn remove_liquidity_ix(
     user: &Keypair,
     vault_account: &Pubkey,
     lb_pair: &Pubkey,
@@ -21,20 +21,17 @@ pub fn add_liquidity_ix(
     token_y_program: &Pubkey,
     event_authority: &Pubkey,
     dlmm_program: &Pubkey,
+    memo_program: &Pubkey,
     bin_array_lower: &Pubkey,
     bin_array_upper: &Pubkey,
-    amount_x: u64,
-    amount_y: u64,
-    bin_liquidity_dist: Vec<BinLiquidityDistribution>,
+    bin_liquidity_reduction: Vec<BinLiquidityReduction>,
 ) -> Instruction {
-    let ix_data = dlmm_vault::instruction::AddLiquidity {
-        amount_x,
-        amount_y,
-        bin_liquidity_dist,
+    let ix_data = dlmm_vault::instruction::RemoveLiquidity {
+        bin_liquidity_reduction,
     }
     .data();
 
-    let accounts = dlmm_vault::accounts::DlmmAddLiquidity {
+    let accounts = dlmm_vault::accounts::DlmmRemoveLiquidity {
         signer: user.pubkey(),
         vault_account: vault_account.clone(),
         lb_pair: lb_pair.clone(),
@@ -43,8 +40,6 @@ pub fn add_liquidity_ix(
         event_authority: event_authority.clone(),
         token_x_program: token_x_program.clone(),
         token_y_program: token_y_program.clone(),
-        bin_array_lower: bin_array_lower.clone(),
-        bin_array_upper: bin_array_upper.clone(),
         reserve_x: reserve_x.clone(),
         reserve_y: reserve_y.clone(),
         vault_token_x: user_token_x.clone(),
@@ -52,6 +47,9 @@ pub fn add_liquidity_ix(
         token_x_mint: token_x_mint.clone(),
         token_y_mint: token_y_mint.clone(),
         bin_array_bitmap_extension: bin_array_bitmap_extension.clone(),
+        memo_program: memo_program.clone(),
+        bin_array_lower: bin_array_lower.clone(),
+        bin_array_upper: bin_array_upper.clone(),
     }
     .to_account_metas(None);
 

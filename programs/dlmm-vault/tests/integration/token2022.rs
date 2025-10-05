@@ -66,6 +66,7 @@ fn test_token2022_integration() {
 
     let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) = initialize_vault_ix(
         &user_clone,
+        &user_clone,
         &PUMP_MINT,
         &USDC_MINT,
         &PUMP_USDC_POOL,

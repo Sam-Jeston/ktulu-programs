@@ -7,6 +7,7 @@ use spl_associated_token_account::get_associated_token_address_with_program_id;
 
 pub fn initialize_vault_ix(
     user: &Keypair,
+    operator: &Keypair,
     mint_x: &Pubkey,
     mint_y: &Pubkey,
     dlmm_pool: &Pubkey,
@@ -16,7 +17,7 @@ pub fn initialize_vault_ix(
     let initialize_ix_data = dlmm_vault::instruction::Initialize {
         lower_price_range_bps: 0,
         upper_price_range_bps: 0,
-        operator: user.pubkey(),
+        operator: operator.pubkey(),
     }
     .data();
 

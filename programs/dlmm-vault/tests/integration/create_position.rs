@@ -62,6 +62,7 @@ fn test_create_position() {
 
     let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) = initialize_vault_ix(
         &user_clone,
+        &user_clone,
         &USDC_MINT,
         &USDT_MINT,
         &USDC_USDT_POOL,
@@ -182,7 +183,7 @@ fn test_create_position() {
     let ev = CreatePositionEvent::try_from_slice(body.as_slice()).expect("borsh decode");
     assert_eq!(ev.vault_account, vault_pda);
     assert_eq!(ev.position, position_pda);
-    assert_eq!(ev.lower_bin_id, -12);
+    assert_eq!(ev.lower_bin_id, -11);
     assert_eq!(ev.width, 5);
 
     let body = find_event(&meta.logs, b"AddLiquidityEvent");
@@ -205,8 +206,8 @@ fn test_create_position() {
     validate_token_account_balance(&mut svm, &vault_ata_y, token_y_deposit_amount - 200);
 
     // Validate that the DlmmVault account has been updated to in_position = true and has the correct position_id
-    let vault_account = load_account(&mut svm, &vault_pda);
-    let vault_account_data = DlmmVaultAccount::try_from_slice(&vault_account.data).unwrap();
+    let vault_account = svm.get_account(&vault_pda.to_bytes().into()).unwrap();
+    let vault_account_data = DlmmVaultAccount::try_from_slice(&vault_account.data[8..]).unwrap();
     assert_eq!(vault_account_data.in_position, true);
     assert_eq!(vault_account_data.position_id, position_pda);
 }

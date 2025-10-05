@@ -32,6 +32,7 @@ fn test_initialize() {
 
     let (initialize_ix, vault_pda, _, _) = initialize_vault_ix(
         &user_clone,
+        &user_clone,
         &USDC_MINT,
         &USDT_MINT,
         &USDC_USDT_POOL,

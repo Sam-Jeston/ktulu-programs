@@ -11,3 +11,5 @@ mod create_position;
 mod token2022;
 
 mod rebalance;
+
+mod close_position;

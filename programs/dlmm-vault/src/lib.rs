@@ -91,7 +91,6 @@ pub mod dlmm_vault {
         )
     }
 
-    // TODO: Integration tests
     pub fn remove_liquidity<'a, 'b, 'c, 'info>(
         ctx: Context<'a, 'b, 'c, 'info, DlmmRemoveLiquidity<'info>>,
         bin_liquidity_reduction: Vec<BinLiquidityReduction>,
@@ -99,13 +98,33 @@ pub mod dlmm_vault {
         instructions::remove_liquidity::handle_dlmm_remove_liquidity(ctx, bin_liquidity_reduction)
     }
 
-    // TODO: Integration tests
     pub fn claim_fees<'a, 'b, 'c, 'info>(
         ctx: Context<'a, 'b, 'c, 'info, DlmmClaimFees<'info>>,
         min_bin_id: i32,
         max_bin_id: i32,
     ) -> Result<()> {
         instructions::claim_fees::handle_dlmm_claim_fees(ctx, min_bin_id, max_bin_id)
+    }
+
+    // TODO: Integration tests
+    pub fn claim_rewards<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, DlmmClaimRewards<'info>>,
+        reward_index: u64,
+        min_bin_id: i32,
+        max_bin_id: i32,
+    ) -> Result<()> {
+        instructions::claim_rewards::handle_dlmm_claim_rewards(
+            ctx,
+            reward_index,
+            min_bin_id,
+            max_bin_id,
+        )
+    }
+
+    pub fn close_position<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, DlmmClosePosition<'info>>,
+    ) -> Result<()> {
+        instructions::close_position::handle_dlmm_close_position(ctx)
     }
 
     pub fn rebalance<'a, 'b, 'c, 'info>(

@@ -5,7 +5,7 @@ use crate::{
     },
     ensure_signer_is_owner_or_operator,
     events::remove_liquidity::RemoveLiquidityEvent,
-    DlmmVaultAccount, VaultErrorCode,
+    DlmmVaultAccount,
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
@@ -107,8 +107,13 @@ pub fn handle_dlmm_remove_liquidity<'a, 'b, 'c, 'info>(
         &[ctx.bumps.vault_account],
     ]];
 
+    let mut rem: Vec<AccountInfo<'info>> = Vec::with_capacity(2);
+    rem.push(ctx.accounts.bin_array_lower.to_account_info());
+    rem.push(ctx.accounts.bin_array_upper.to_account_info());
+
     let cpi_context = CpiContext::new(ctx.accounts.dlmm_program.to_account_info(), accounts)
-        .with_signer(signer_seeds);
+        .with_signer(signer_seeds)
+        .with_remaining_accounts(rem);
 
     // Explicitly have no support for any Token2022 hooks at this point in time. Vaults initialization ensures
     // that if the token is token2022, that it has no extensions
@@ -122,6 +127,7 @@ pub fn handle_dlmm_remove_liquidity<'a, 'b, 'c, 'info>(
 
     emit!(RemoveLiquidityEvent {
         vault_account: ctx.accounts.vault_account.key(),
+        position: ctx.accounts.position.key(),
         signer: ctx.accounts.signer.key(),
         bin_liquidity_reduction,
     });
