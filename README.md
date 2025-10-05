@@ -2,7 +2,7 @@
 
 ## TODOs
  - Name project and populate README
- - Remove all `UncheckedAccount` types
+ - Remove `UncheckedAccount` types where inappropriate
  - Ensure Vault and associated token accounts are closeable
  - Test more Token2022s and implement transfer hooks. HVbpJAQGNpkgBaYBZQBR1t7yFdvaYVp2vCQQfKKEN4tM has transfer hooks
  - Find a DLMM in prod with rewards, and run a test against that pool

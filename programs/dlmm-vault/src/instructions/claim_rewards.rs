@@ -84,11 +84,9 @@ pub fn handle_dlmm_claim_rewards<'a, 'b, 'c, 'info>(
     let initial_balance = ctx.accounts.vault_token_account.amount;
 
     let cpi_context = CpiContext::new(ctx.accounts.dlmm_program.to_account_info(), accounts)
-        .with_signer(signer_seeds)
-        .with_remaining_accounts(ctx.remaining_accounts.to_vec());
+        .with_signer(signer_seeds);
 
-    // Explicitly have no support for any Token2022 hooks at this point in time. Vaults initialization ensures
-    // that if the token is token2022, that it has no extensions
+    // Explicitly have no support for any Token2022 hooks at this point in time
     let remaining_accounts_info = RemainingAccountsInfo { slices: vec![] };
 
     dlmm::cpi::claim_reward2(

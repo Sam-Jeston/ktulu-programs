@@ -7,7 +7,7 @@ use anchor_spl::token_interface::{
 };
 
 use crate::close_vault::CloseVaultEvent;
-use crate::{DlmmVaultAccount, VaultErrorCode};
+use crate::{ensure_signer_is_owner, DlmmVaultAccount, VaultErrorCode};
 
 #[derive(Accounts)]
 pub struct CloseVault<'info> {
@@ -37,9 +37,6 @@ pub struct CloseVault<'info> {
     pub owner_ata_x: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
     pub owner_ata_y: InterfaceAccount<'info, TokenAccount>,
-
-    pub associated_token_program: Program<'info, AssociatedToken>,
-    pub system_program: Program<'info, System>,
 }
 
 pub fn handle_close_vault(ctx: Context<CloseVault>) -> Result<()> {
@@ -60,10 +57,7 @@ pub fn handle_close_vault(ctx: Context<CloseVault>) -> Result<()> {
     );
 
     // The only user who can call `close` is the vault owner. Ensure the signer is the vault owner.
-    require!(
-        ctx.accounts.owner.key() == ctx.accounts.vault_account.owner,
-        VaultErrorCode::InvalidSigner
-    );
+    ensure_signer_is_owner(&ctx.accounts.owner.key, &ctx.accounts.vault_account)?;
 
     // PDA signer seeds
     let seeds = &[

@@ -120,8 +120,8 @@ pub fn handle_dlmm_add_liquidity<'a, 'b, 'c, 'info>(
         bin_liquidity_dist: bin_liquidity_dist.clone(),
     };
 
-    // Explicitly have no support for any Token2022 hooks at this point in time. Vaults initialization ensures
-    // that if the token is token2022, that it has no extensions
+    // Explicitly have no support for any Token2022 hooks at this point in time. Vaults deposits do not
+    // forward remaining accounts, ensuring that if any hooks are required, that the vault cannot be funded
     let remaining_accounts_info = RemainingAccountsInfo { slices: vec![] };
 
     dlmm::cpi::add_liquidity2(cpi_context, liquidity_parameter, remaining_accounts_info)?;

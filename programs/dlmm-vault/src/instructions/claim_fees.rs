@@ -114,8 +114,7 @@ pub fn handle_dlmm_claim_fees<'a, 'b, 'c, 'info>(
         .with_signer(signer_seeds)
         .with_remaining_accounts(rem);
 
-    // Explicitly have no support for any Token2022 hooks at this point in time. Vaults initialization ensures
-    // that if the token is token2022, that it has no extensions
+    // Explicitly have no support for any Token2022 hooks at this point in time
     let remaining_accounts_info = RemainingAccountsInfo { slices: vec![] };
 
     dlmm::cpi::claim_fee2(cpi_context, min_bin_id, max_bin_id, remaining_accounts_info)?;

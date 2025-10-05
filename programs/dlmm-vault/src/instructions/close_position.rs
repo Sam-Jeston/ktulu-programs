@@ -56,8 +56,7 @@ pub fn handle_dlmm_close_position<'a, 'b, 'c, 'info>(
     ]];
 
     let cpi_context = CpiContext::new(ctx.accounts.dlmm_program.to_account_info(), accounts)
-        .with_signer(signer_seeds)
-        .with_remaining_accounts(ctx.remaining_accounts.to_vec());
+        .with_signer(signer_seeds);
 
     dlmm::cpi::close_position2(cpi_context)?;
 

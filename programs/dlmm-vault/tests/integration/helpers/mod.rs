@@ -2,6 +2,7 @@ pub mod account;
 pub mod add_liquidity_ix;
 pub mod atl;
 pub mod claim_fees_ix;
+pub mod close_ix;
 pub mod close_position_ix;
 pub mod create_position_ix;
 pub mod deposit_ix;
