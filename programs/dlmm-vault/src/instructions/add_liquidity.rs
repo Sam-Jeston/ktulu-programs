@@ -3,6 +3,7 @@ use crate::{
         self,
         types::{BinLiquidityDistribution, LiquidityParameter, RemainingAccountsInfo},
     },
+    ensure_signer_is_owner_or_operator,
     events::add_liquidity::AddLiquidityEvent,
     DlmmVaultAccount, VaultErrorCode,
 };
@@ -75,11 +76,7 @@ pub fn handle_dlmm_add_liquidity<'a, 'b, 'c, 'info>(
     bin_liquidity_dist: Vec<BinLiquidityDistribution>,
 ) -> Result<()> {
     // Position creation is valid for both the owner and the operator
-    let signer_is_owner = ctx.accounts.signer.key() == ctx.accounts.vault_account.owner;
-    let signer_is_operator = ctx.accounts.signer.key() == ctx.accounts.vault_account.operator;
-    if !signer_is_owner && !signer_is_operator {
-        return Err(error!(VaultErrorCode::InvalidSigner));
-    }
+    ensure_signer_is_owner_or_operator(&ctx.accounts.signer.key, &ctx.accounts.vault_account)?;
 
     let accounts = dlmm::cpi::accounts::AddLiquidity2 {
         lb_pair: ctx.accounts.lb_pair.to_account_info(),

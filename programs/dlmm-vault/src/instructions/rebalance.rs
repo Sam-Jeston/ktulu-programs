@@ -1,18 +1,11 @@
 use std::str::FromStr;
 
 use crate::{
-    dlmm::{
-        self,
-        types::{BinLiquidityDistribution, LiquidityParameter, RemainingAccountsInfo},
-    },
-    events::{add_liquidity::AddLiquidityEvent, rebalance::RebalanceEvent},
-    jupiter::program::Jupiter,
-    DlmmVaultAccount, VaultErrorCode,
+    ensure_signer_is_owner_or_operator, events::rebalance::RebalanceEvent,
+    jupiter::program::Jupiter, token_amount, DlmmVaultAccount,
 };
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::program_pack::Pack;
 use anchor_lang::solana_program::{instruction::Instruction, program::invoke_signed};
-use anchor_spl::token_2022::spl_token_2022::state::Account as SplTokenAccount;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 pub fn jupiter_program_id() -> Pubkey {
@@ -50,12 +43,7 @@ pub fn handle_rebalance<'a, 'b, 'c, 'info>(
     // TODO: Add "last rebalanced" guard onto VaultAccount to give users guarantees
     // that the operator cannot abuse the rebalance instruction
 
-    // Only the owner or operator can rebalance a position
-    let signer_is_owner = ctx.accounts.signer.key() == ctx.accounts.vault_account.owner;
-    let signer_is_operator = ctx.accounts.signer.key() == ctx.accounts.vault_account.operator;
-    if !signer_is_owner && !signer_is_operator {
-        return Err(error!(VaultErrorCode::InvalidSigner));
-    }
+    ensure_signer_is_owner_or_operator(&ctx.accounts.signer.key, &ctx.accounts.vault_account)?;
 
     require_keys_eq!(*ctx.accounts.jupiter_program.key, jupiter_program_id());
 
@@ -83,7 +71,7 @@ pub fn handle_rebalance<'a, 'b, 'c, 'info>(
 
     let signer_seeds: &[&[&[u8]]] = &[&[
         b"dlmm_vault",
-        ctx.accounts.signer.key.as_ref(),
+        ctx.accounts.vault_account.owner.as_ref(),
         ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
         &[ctx.bumps.vault_account],
     ]];
@@ -116,12 +104,4 @@ pub fn handle_rebalance<'a, 'b, 'c, 'info>(
     });
 
     Ok(())
-}
-
-fn token_amount(ai: &anchor_lang::prelude::AccountInfo) -> Result<u64> {
-    let amt = {
-        let data = ai.try_borrow_data()?;
-        SplTokenAccount::unpack(&data)?.amount
-    };
-    Ok(amt)
 }

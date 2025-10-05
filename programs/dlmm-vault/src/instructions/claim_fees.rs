@@ -1,7 +1,7 @@
 use crate::{
     dlmm::{self, types::RemainingAccountsInfo},
     events::{claim_fees::ClaimFeesEvent, create_position::CreatePositionEvent},
-    DlmmVaultAccount, VaultErrorCode,
+    token_amount, DlmmVaultAccount, VaultErrorCode,
 };
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_pack::Pack;
@@ -141,12 +141,4 @@ pub fn handle_dlmm_claim_fees<'a, 'b, 'c, 'info>(
     });
 
     Ok(())
-}
-
-fn token_amount(ai: &anchor_lang::prelude::AccountInfo) -> Result<u64> {
-    let amt = {
-        let data = ai.try_borrow_data()?;
-        SplTokenAccount::unpack(&data)?.amount
-    };
-    Ok(amt)
 }

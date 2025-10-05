@@ -15,6 +15,9 @@ pub use errors::*;
 pub mod events;
 pub use events::*;
 
+pub mod helpers;
+pub use helpers::*;
+
 declare_program!(dlmm);
 declare_program!(jupiter);
 use crate::dlmm::types::{BinLiquidityDistribution, BinLiquidityReduction};

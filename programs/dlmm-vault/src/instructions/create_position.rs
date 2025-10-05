@@ -1,5 +1,6 @@
 use crate::{
     dlmm::{self},
+    ensure_signer_is_owner_or_operator,
     events::create_position::CreatePositionEvent,
     DlmmVaultAccount, VaultErrorCode,
 };
@@ -45,11 +46,7 @@ pub fn handle_dlmm_create_position<'a, 'b, 'c, 'info>(
     }
 
     // Position creation is valid for both the owner and the operator
-    let signer_is_owner = ctx.accounts.signer.key() == ctx.accounts.vault_account.owner;
-    let signer_is_operator = ctx.accounts.signer.key() == ctx.accounts.vault_account.operator;
-    if !signer_is_owner && !signer_is_operator {
-        return Err(error!(VaultErrorCode::InvalidSigner));
-    }
+    ensure_signer_is_owner_or_operator(&ctx.accounts.signer.key, &ctx.accounts.vault_account)?;
 
     let accounts = dlmm::cpi::accounts::InitializePositionPda {
         owner: ctx.accounts.vault_account.to_account_info(),

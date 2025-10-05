@@ -1,6 +1,8 @@
 use anchor_lang::prelude::*;
 
-use crate::{events::withdraw::WithdrawEvent, DlmmVaultAccount, VaultErrorCode};
+use crate::{
+    ensure_signer_is_owner, events::withdraw::WithdrawEvent, DlmmVaultAccount, VaultErrorCode,
+};
 use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
 
 #[derive(Accounts)]
@@ -34,10 +36,7 @@ pub fn handle_dlmm_withdraw<'a, 'b, 'c, 'info>(
     token_x_withdraw_amount: u64,
     token_y_withdraw_amount: u64,
 ) -> Result<()> {
-    // Access to withdraw is limitted to the owner of the vault
-    if ctx.accounts.signer.key() != ctx.accounts.vault_account.owner {
-        return Err(error!(VaultErrorCode::InvalidSigner));
-    }
+    ensure_signer_is_owner(&ctx.accounts.signer.key, &ctx.accounts.vault_account)?;
 
     // Validate that the vault_owner_token_x account is an ATA for vault_account.token_x_mint
     if ctx.accounts.vault_owner_token_x.mint != ctx.accounts.vault_account.token_x_mint {

@@ -1,7 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
 
-use crate::{events::deposit::DepositEvent, DlmmVaultAccount, VaultErrorCode};
+use crate::{
+    ensure_signer_is_owner, events::deposit::DepositEvent, DlmmVaultAccount, VaultErrorCode,
+};
 
 #[derive(Accounts)]
 pub struct DlmmDeposit<'info> {
@@ -30,9 +32,7 @@ pub fn handle_dlmm_deposit<'a, 'b, 'c, 'info>(
     token_y_deposit_amount: u64,
 ) -> Result<()> {
     // Access to deposit is limitted to the owner of the vault
-    if ctx.accounts.signer.key() != ctx.accounts.vault_account.owner {
-        return Err(error!(VaultErrorCode::InvalidSigner));
-    }
+    ensure_signer_is_owner(&ctx.accounts.signer.key, &ctx.accounts.vault_account)?;
 
     // Validate that the vault_owner_token_x account is an ATA for vault_account.token_x_mint
     if ctx.accounts.vault_owner_token_x.mint != ctx.accounts.vault_account.token_x_mint {
