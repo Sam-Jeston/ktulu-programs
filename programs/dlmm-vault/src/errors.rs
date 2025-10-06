@@ -15,4 +15,8 @@ pub enum VaultErrorCode {
     PositionNotOpen,
     #[msg("Non-zero balance")]
     NonZeroBalance,
+    #[msg("Position width does not match vault configuration")]
+    InvalidWidth,
+    #[msg("Invalid harvest bps - maximum is 10_000")]
+    InvalidHarvestBps,
 }

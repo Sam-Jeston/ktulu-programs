@@ -5,9 +5,10 @@ use dlmm_vault::events::claim_fees::ClaimFeesEvent;
 use dlmm_vault::events::close_position::ClosePositionEvent;
 use dlmm_vault::events::create_position::CreatePositionEvent;
 use dlmm_vault::events::remove_liquidity::RemoveLiquidityEvent;
-use dlmm_vault::DlmmVaultAccount;
+use dlmm_vault::{DlmmVaultAccount, FeeCompoundingStrategy, VolatilityStrategy};
 use litesvm::LiteSVM;
 use solana_keypair::{Keypair as SKeypair, Signer as SSigner};
+use solana_program_test::tokio;
 use solana_sdk::native_token::LAMPORTS_PER_SOL;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::{signature::Keypair, signer::Signer};
@@ -23,6 +24,7 @@ use crate::helpers::dlmm_pda::{
 use crate::helpers::event::find_event;
 use crate::helpers::initialize_ix::initialize_vault_ix;
 use crate::helpers::program::{load_dlmm_program, load_dlmm_vault_program};
+use crate::helpers::swap::execute_swap_to_y;
 use crate::helpers::token::{create_and_fund_token_account, validate_token_account_balance};
 use crate::helpers::transaction::prepare_tx;
 use crate::helpers::{
@@ -35,10 +37,13 @@ const USDC_MINT: Pubkey = solana_sdk::pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wE
 const USDT_MINT: Pubkey = solana_sdk::pubkey!("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB");
 const RENT_PROGRAM: Pubkey = solana_sdk::pubkey!("SysvarRent111111111111111111111111111111111");
 const MEMO_PROGRAM: Pubkey = solana_sdk::pubkey!("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
-#[test]
-fn test_close_position() {
+
+#[tokio::test]
+async fn test_close_position() {
     let user = SKeypair::new();
     let user_clone = Keypair::from_bytes(&user.to_bytes()).unwrap();
+    let operator = SKeypair::new();
+    let operator_clone = Keypair::from_bytes(&operator.to_bytes()).unwrap();
 
     let mut svm = LiteSVM::new();
     load_dlmm_vault_program(&mut svm);
@@ -68,14 +73,30 @@ fn test_close_position() {
         token_y_initial_balance,
         &anchor_spl::token::ID,
     );
+    let operator_ata_y = create_and_fund_token_account(
+        &mut svm,
+        &operator_clone.pubkey(),
+        &USDT_MINT,
+        token_y_initial_balance,
+        &anchor_spl::token::ID,
+    );
 
-    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) = initialize_vault_ix(
+    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y, _) = initialize_vault_ix(
         &user_clone,
         &user_clone,
         &USDC_MINT,
         &USDT_MINT,
         &USDC_USDT_POOL,
         &anchor_spl::token::ID,
+        &anchor_spl::token::ID,
+        true,
+        true,
+        FeeCompoundingStrategy::Aggressive,
+        VolatilityStrategy::Spot,
+        5,
+        false,
+        0,
+        &USDC_MINT,
         &anchor_spl::token::ID,
     );
 
@@ -210,6 +231,7 @@ fn test_close_position() {
         &top_bin_array_key,
         lower_bin_id,
         bin_id,
+        &operator_ata_y,
     );
 
     let remove_liquidity_ix = remove_liquidity_ix(
@@ -255,6 +277,9 @@ fn test_close_position() {
         &event_authority_pda,
     );
 
+    // Fire off a swap to accumulate fees
+    execute_swap_to_y(&mut svm).await;
+
     // Get the SOL balance of the user before sending the next transaction
     let sol_balance_before_close = svm
         .get_balance(&user_clone.pubkey().to_bytes().into())
@@ -273,10 +298,8 @@ fn test_close_position() {
     assert_eq!(ev.vault_account, vault_pda);
     assert_eq!(ev.position, position_pda);
     // No fees to claim in this instance, so vault balances will be deposit - liquidity amount
-    assert_eq!(ev.initial_x_balance, 9800);
-    assert_eq!(ev.initial_y_balance, 4800);
-    assert_eq!(ev.final_x_balance, 9800);
-    assert_eq!(ev.final_y_balance, 4800);
+    assert_eq!(ev.x_compounded, 0);
+    assert_eq!(ev.y_compounded, 0);
 
     let body = find_event(&meta.logs, b"RemoveLiquidityEvent");
     let ev = RemoveLiquidityEvent::try_from_slice(body.as_slice()).expect("borsh decode");
@@ -359,13 +382,30 @@ fn test_close_position_with_operator() {
         &anchor_spl::token::ID,
     );
 
-    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) = initialize_vault_ix(
+    let operator_ata_y = create_and_fund_token_account(
+        &mut svm,
+        &operator_clone.pubkey(),
+        &USDT_MINT,
+        token_y_initial_balance,
+        &anchor_spl::token::ID,
+    );
+
+    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y, _) = initialize_vault_ix(
         &user_clone,
         &operator_clone,
         &USDC_MINT,
         &USDT_MINT,
         &USDC_USDT_POOL,
         &anchor_spl::token::ID,
+        &anchor_spl::token::ID,
+        true,
+        true,
+        FeeCompoundingStrategy::Aggressive,
+        VolatilityStrategy::Spot,
+        5,
+        false,
+        0,
+        &USDC_MINT,
         &anchor_spl::token::ID,
     );
 
@@ -502,6 +542,7 @@ fn test_close_position_with_operator() {
         &top_bin_array_key,
         lower_bin_id,
         bin_id,
+        &operator_ata_y,
     );
 
     let remove_liquidity_ix = remove_liquidity_ix(
@@ -564,11 +605,8 @@ fn test_close_position_with_operator() {
     let ev = ClaimFeesEvent::try_from_slice(body.as_slice()).expect("borsh decode");
     assert_eq!(ev.vault_account, vault_pda);
     assert_eq!(ev.position, position_pda);
-    // No fees to claim in this instance, so vault balances will be deposit - liquidity amount
-    assert_eq!(ev.initial_x_balance, 9800);
-    assert_eq!(ev.initial_y_balance, 4800);
-    assert_eq!(ev.final_x_balance, 9800);
-    assert_eq!(ev.final_y_balance, 4800);
+    assert_eq!(ev.x_compounded, 0);
+    assert_eq!(ev.y_compounded, 0);
 
     let body = find_event(&meta.logs, b"RemoveLiquidityEvent");
     let ev = RemoveLiquidityEvent::try_from_slice(body.as_slice()).expect("borsh decode");

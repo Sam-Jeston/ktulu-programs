@@ -5,9 +5,6 @@ skip-lint = false
 [programs.localnet]
 dlmm-vault = "7Y1iiXP68seqhZtyQ1fEwxCYJVmJztwvXBBnZvRn3DyC"
 
-[registry]
-url = "https://api.apr.dev"
-
 [provider]
 cluster = "Localnet"
 wallet = "~/.config/solana/id.json"

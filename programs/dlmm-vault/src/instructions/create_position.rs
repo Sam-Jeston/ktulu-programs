@@ -45,6 +45,10 @@ pub fn handle_dlmm_create_position<'a, 'b, 'c, 'info>(
         return Err(error!(VaultErrorCode::PositionStillOpen));
     }
 
+    if width != ctx.accounts.vault_account.bin_width as i32 {
+        return Err(error!(VaultErrorCode::InvalidWidth));
+    }
+
     // Position creation is valid for both the owner and the operator
     ensure_signer_is_owner_or_operator(&ctx.accounts.signer.key, &ctx.accounts.vault_account)?;
 

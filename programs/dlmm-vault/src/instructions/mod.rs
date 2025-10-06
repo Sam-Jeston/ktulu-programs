@@ -25,8 +25,8 @@ pub use remove_liquidity::*;
 pub mod close_position;
 pub use close_position::*;
 
-pub mod rebalance;
-pub use rebalance::*;
+pub mod swap;
+pub use swap::*;
 
 pub mod close;
 pub use close::*;

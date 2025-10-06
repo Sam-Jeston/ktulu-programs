@@ -1,5 +1,6 @@
 use anchor_lang::AnchorDeserialize;
 use dlmm_vault::events::initialize::InitializeEvent;
+use dlmm_vault::{FeeCompoundingStrategy, VolatilityStrategy};
 use litesvm::LiteSVM;
 use solana_keypair::{Keypair as SKeypair, Signer as SSigner};
 use solana_sdk::pubkey::Pubkey;
@@ -30,7 +31,7 @@ fn test_initialize() {
     load_account(&mut svm, &USDC_MINT);
     load_account(&mut svm, &USDT_MINT);
 
-    let (initialize_ix, vault_pda, _, _) = initialize_vault_ix(
+    let (initialize_ix, vault_pda, _, _, _) = initialize_vault_ix(
         &user_clone,
         &user_clone,
         &USDC_MINT,
@@ -38,13 +39,22 @@ fn test_initialize() {
         &USDC_USDT_POOL,
         &anchor_spl::token::ID,
         &anchor_spl::token::ID,
+        true,
+        true,
+        FeeCompoundingStrategy::Aggressive,
+        VolatilityStrategy::Spot,
+        5,
+        false,
+        0,
+        &USDC_MINT,
+        &anchor_spl::token::ID,
     );
 
     let tx = prepare_tx(&mut svm, &user.pubkey(), &[&user], &[initialize_ix]);
     let sim_res = svm.simulate_transaction(tx.clone()).unwrap();
     let meta = svm.send_transaction(tx).unwrap();
     assert_eq!(sim_res.meta, meta);
-    assert!(meta.compute_units_consumed < 100_000);
+    assert!(meta.compute_units_consumed < 200_000);
 
     let body = find_event(&meta.logs, b"InitializeEvent");
     let ev = InitializeEvent::try_from_slice(body.as_slice()).expect("borsh decode");
@@ -53,8 +63,14 @@ fn test_initialize() {
     assert_eq!(ev.token_x_mint, USDC_MINT);
     assert_eq!(ev.token_y_mint, USDT_MINT);
     assert_eq!(ev.dlmm_pool, USDC_USDT_POOL);
-    assert_eq!(ev.lower_price_range_bps, 0);
-    assert_eq!(ev.upper_price_range_bps, 0);
+    assert_eq!(ev.auto_compound, true);
+    assert_eq!(ev.auto_rebalance, true);
+    assert_eq!(ev.volatility_strategy, VolatilityStrategy::Spot);
+    assert_eq!(ev.bin_width, 5);
+    assert_eq!(
+        ev.fee_compounding_strategy,
+        FeeCompoundingStrategy::Aggressive
+    );
     assert_eq!(ev.operator, user_clone.pubkey());
     assert_eq!(ev.position_id, Pubkey::default());
 }

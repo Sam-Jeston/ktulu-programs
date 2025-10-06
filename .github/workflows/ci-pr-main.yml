@@ -1,6 +1,9 @@
-name: CPI example
+name: DLMM Vault
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -19,7 +22,7 @@ jobs:
         uses: tj-actions/changed-files@v18.6
         with:
           files: |
-            programs/cpi-example
+            programs/dlmm-vault
 
   dlmm_vault_test:
     runs-on: ubuntu-24.04
@@ -31,6 +34,7 @@ jobs:
         with:
           toolchain: 1.85
           override: true
+      - uses: metadaoproject/setup-anchor@v3.3
       - uses: Swatinem/rust-cache@v2
       - run: cargo test -- --nocapture
         shell: bash

@@ -26,7 +26,7 @@ pub struct DlmmDeposit<'info> {
     pub token_y_program: Interface<'info, TokenInterface>,
 }
 
-pub fn handle_dlmm_deposit<'a, 'b, 'c, 'info>(
+pub fn handle_deposit<'a, 'b, 'c, 'info>(
     ctx: Context<'a, 'b, 'c, 'info, DlmmDeposit<'info>>,
     token_x_deposit_amount: u64,
     token_y_deposit_amount: u64,

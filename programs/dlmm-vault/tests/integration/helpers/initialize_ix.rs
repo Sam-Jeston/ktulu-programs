@@ -1,4 +1,5 @@
 use anchor_lang::{system_program, InstructionData, ToAccountMetas};
+use dlmm_vault::{FeeCompoundingStrategy, VolatilityStrategy};
 use solana_instruction::account_meta::AccountMeta as SAccountMeta;
 use solana_message::Instruction;
 use solana_sdk::pubkey::Pubkey;
@@ -13,11 +14,25 @@ pub fn initialize_vault_ix(
     dlmm_pool: &Pubkey,
     token_x_program: &Pubkey,
     token_y_program: &Pubkey,
-) -> (Instruction, Pubkey, Pubkey, Pubkey) {
+    auto_compound: bool,
+    auto_rebalance: bool,
+    fee_compounding_strategy: FeeCompoundingStrategy,
+    volatility_strategy: VolatilityStrategy,
+    bin_width: u16,
+    use_harvest_mint: bool,
+    harvest_bps: u16,
+    harvest_mint: &Pubkey,
+    harvest_program: &Pubkey,
+) -> (Instruction, Pubkey, Pubkey, Pubkey, Pubkey) {
     let initialize_ix_data = dlmm_vault::instruction::Initialize {
-        lower_price_range_bps: 0,
-        upper_price_range_bps: 0,
+        auto_compound,
+        auto_rebalance,
+        volatility_strategy,
+        bin_width,
+        fee_compounding_strategy,
         operator: operator.pubkey(),
+        use_harvest_mint,
+        harvest_bps,
     }
     .data();
 
@@ -29,6 +44,9 @@ pub fn initialize_vault_ix(
         ],
         &dlmm_vault::id(),
     );
+
+    let (harvest_pda, _bump) =
+        Pubkey::find_program_address(&[b"harvest", vault_pda.as_ref()], &dlmm_vault::id());
 
     let vault_ata_x =
         get_associated_token_address_with_program_id(&vault_pda, &mint_x.clone(), token_x_program);
@@ -42,6 +60,9 @@ pub fn initialize_vault_ix(
         token_y_mint: mint_y.clone(),
         token_x_program: token_x_program.clone(),
         token_y_program: token_y_program.clone(),
+        harvest_mint: harvest_mint.clone(),
+        harvest_program: harvest_program.clone(),
+        harvest_account: harvest_pda,
         dlmm_pool: dlmm_pool.to_bytes().into(),
         system_program: system_program::ID,
         token_x_ata: vault_ata_x,
@@ -63,5 +84,5 @@ pub fn initialize_vault_ix(
             .collect(),
     };
 
-    (ix, vault_pda, vault_ata_x, vault_ata_y)
+    (ix, vault_pda, vault_ata_x, vault_ata_y, harvest_pda)
 }

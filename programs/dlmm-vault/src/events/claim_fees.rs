@@ -5,9 +5,10 @@ use anchor_lang::prelude::*;
 pub struct ClaimFeesEvent {
     pub vault_account: Pubkey,
     pub position: Pubkey,
-    pub initial_x_balance: u64,
-    pub initial_y_balance: u64,
-    pub final_x_balance: u64,
-    pub final_y_balance: u64,
+    pub y_compounded: u64,
+    pub x_compounded: u64,
+    pub y_fee_paid: u64,
+    pub x_harvested: u64,
+    pub y_harvested: u64,
     pub signer: Pubkey,
 }

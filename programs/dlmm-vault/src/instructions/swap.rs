@@ -13,7 +13,7 @@ pub fn jupiter_program_id() -> Pubkey {
 }
 
 #[derive(Accounts)]
-pub struct Rebalance<'info> {
+pub struct JupSwap<'info> {
     #[account(
         mut,
         seeds = [b"dlmm_vault".as_ref(), vault_account.owner.as_ref(), vault_account.dlmm_pool_id.as_ref()],
@@ -36,15 +36,11 @@ pub struct Rebalance<'info> {
     pub jupiter_program: Program<'info, Jupiter>,
 }
 
-pub fn handle_rebalance<'a, 'b, 'c, 'info>(
-    ctx: Context<'a, 'b, 'c, 'info, Rebalance<'info>>,
+pub fn handle_jup_swap<'a, 'b, 'c, 'info>(
+    ctx: Context<'a, 'b, 'c, 'info, JupSwap<'info>>,
     data: Vec<u8>,
 ) -> Result<()> {
-    // TODO: Add "last rebalanced" guard onto VaultAccount to give users guarantees
-    // that the operator cannot abuse the rebalance instruction
-
     ensure_signer_is_owner_or_operator(&ctx.accounts.signer.key, &ctx.accounts.vault_account)?;
-
     require_keys_eq!(*ctx.accounts.jupiter_program.key, jupiter_program_id());
 
     let initial_in_balance = ctx.accounts.vault_input_token_account.amount;

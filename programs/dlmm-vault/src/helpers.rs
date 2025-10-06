@@ -38,6 +38,8 @@ pub fn ensure_signer_is_owner_or_operator(
 mod tests {
     use solana_sdk::{signature::Keypair, signer::Signer};
 
+    use crate::{FeeCompoundingStrategy, VolatilityStrategy};
+
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
@@ -50,8 +52,16 @@ mod tests {
             position_id: Pubkey::default(),
             token_x_mint: Pubkey::default(),
             token_y_mint: Pubkey::default(),
-            lower_price_range_bps: 0,
-            upper_price_range_bps: 0,
+            auto_compound: true,
+            auto_rebalance: true,
+            volatility_strategy: VolatilityStrategy::Spot,
+            bin_width: 40,
+            fee_compounding_strategy: FeeCompoundingStrategy::Aggressive,
+            use_harvest_mint: false,
+            harvest_bps: 0,
+            harvest_mint: Pubkey::default(),
+            virtual_token_x_harvest: 0,
+            virtual_token_y_harvest: 0,
         }
     }
 

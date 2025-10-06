@@ -17,10 +17,16 @@ pub fn withdraw_vault_ix(
     token_y_program: &Pubkey,
     token_x_withdraw_amount: u64,
     token_y_withdraw_amount: u64,
+    vault_owner_harvest_token: &Pubkey,
+    harvest_token: &Pubkey,
+    harvest_mint: &Pubkey,
+    harvest_mint_program: &Pubkey,
+    harvest_mint_withdraw_amount: u64,
 ) -> Instruction {
-    let ix_data = dlmm_vault::instruction::DlmmWithdraw {
+    let ix_data = dlmm_vault::instruction::Withdraw {
         token_x_withdraw_amount,
         token_y_withdraw_amount,
+        harvest_mint_withdraw_amount,
     }
     .data();
 
@@ -35,6 +41,10 @@ pub fn withdraw_vault_ix(
         token_y_mint: token_y_mint.clone(),
         token_x_program: token_x_program.clone(),
         token_y_program: token_y_program.clone(),
+        vault_owner_harvest_token: vault_owner_harvest_token.clone(),
+        harvest_token: harvest_token.clone(),
+        harvest_mint: harvest_mint.clone(),
+        harvest_mint_program: harvest_mint_program.clone(),
     }
     .to_account_metas(None);
 

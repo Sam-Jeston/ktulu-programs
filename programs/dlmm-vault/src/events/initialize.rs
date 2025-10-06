@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
 
+use crate::{FeeCompoundingStrategy, VolatilityStrategy};
+
 #[event]
 #[derive(Debug)]
 pub struct InitializeEvent {
@@ -8,8 +10,11 @@ pub struct InitializeEvent {
     pub token_x_mint: Pubkey,
     pub token_y_mint: Pubkey,
     pub dlmm_pool: Pubkey,
-    pub lower_price_range_bps: u64,
-    pub upper_price_range_bps: u64,
+    pub auto_compound: bool,
+    pub auto_rebalance: bool,
+    pub fee_compounding_strategy: FeeCompoundingStrategy,
+    pub volatility_strategy: VolatilityStrategy,
+    pub bin_width: u16,
     pub operator: Pubkey,
     pub position_id: Pubkey,
 }

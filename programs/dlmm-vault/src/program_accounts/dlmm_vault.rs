@@ -1,5 +1,18 @@
 use anchor_lang::prelude::*;
 
+#[derive(InitSpace, AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
+pub enum FeeCompoundingStrategy {
+    Aggressive,
+    Conservative,
+}
+
+#[derive(InitSpace, AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
+pub enum VolatilityStrategy {
+    Spot,
+    Curve,
+    BidAsk,
+}
+
 #[account]
 #[derive(InitSpace)]
 pub struct DlmmVaultAccount {
@@ -11,6 +24,17 @@ pub struct DlmmVaultAccount {
     pub position_id: Pubkey,
     pub token_x_mint: Pubkey,
     pub token_y_mint: Pubkey,
-    pub lower_price_range_bps: u64,
-    pub upper_price_range_bps: u64,
+    pub auto_compound: bool,
+    pub auto_rebalance: bool,
+    // Swapping harvested token X and token Y into harvest mint is optional
+    pub use_harvest_mint: bool,
+    // How many basis points of the fees claimed should be harvested on fee claim
+    pub harvest_bps: u16,
+    // The pubkey of the mint to harvest into. It can be either Token X, Token Y or a different mint
+    pub harvest_mint: Pubkey,
+    pub fee_compounding_strategy: FeeCompoundingStrategy,
+    pub bin_width: u16,
+    pub volatility_strategy: VolatilityStrategy,
+    pub virtual_token_x_harvest: u64,
+    pub virtual_token_y_harvest: u64,
 }

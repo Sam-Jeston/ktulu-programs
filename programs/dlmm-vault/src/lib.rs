@@ -27,45 +27,52 @@ declare_id!("7Y1iiXP68seqhZtyQ1fEwxCYJVmJztwvXBBnZvRn3DyC");
 #[program]
 pub mod dlmm_vault {
 
-    use crate::dlmm::types::BinLiquidityReduction;
-
     use super::*;
+    use crate::FeeCompoundingStrategy;
 
     pub fn initialize<'a, 'b, 'c, 'info>(
         ctx: Context<'a, 'b, 'c, 'info, Initialize<'info>>,
-        lower_price_range_bps: u64,
-        upper_price_range_bps: u64,
+        auto_compound: bool,
+        auto_rebalance: bool,
+        fee_compounding_strategy: FeeCompoundingStrategy,
+        volatility_strategy: VolatilityStrategy,
+        bin_width: u16,
         operator: Pubkey,
+        use_harvest_mint: bool,
+        harvest_bps: u16,
     ) -> Result<()> {
         instructions::initialize::handle_initialize(
             ctx,
-            lower_price_range_bps,
-            upper_price_range_bps,
+            auto_compound,
+            auto_rebalance,
+            fee_compounding_strategy,
+            volatility_strategy,
+            bin_width,
             operator,
+            use_harvest_mint,
+            harvest_bps,
         )
     }
 
-    pub fn dlmm_deposit<'a, 'b, 'c, 'info>(
+    pub fn deposit<'a, 'b, 'c, 'info>(
         ctx: Context<'a, 'b, 'c, 'info, DlmmDeposit<'info>>,
         token_x_deposit_amount: u64,
         token_y_deposit_amount: u64,
     ) -> Result<()> {
-        instructions::deposit::handle_dlmm_deposit(
-            ctx,
-            token_x_deposit_amount,
-            token_y_deposit_amount,
-        )
+        instructions::deposit::handle_deposit(ctx, token_x_deposit_amount, token_y_deposit_amount)
     }
 
-    pub fn dlmm_withdraw<'a, 'b, 'c, 'info>(
+    pub fn withdraw<'a, 'b, 'c, 'info>(
         ctx: Context<'a, 'b, 'c, 'info, DlmmWithdraw<'info>>,
         token_x_withdraw_amount: u64,
         token_y_withdraw_amount: u64,
+        harvest_mint_withdraw_amount: u64,
     ) -> Result<()> {
-        instructions::withdraw::handle_dlmm_withdraw(
+        instructions::withdraw::handle_withdraw(
             ctx,
             token_x_withdraw_amount,
             token_y_withdraw_amount,
+            harvest_mint_withdraw_amount,
         )
     }
 
@@ -127,14 +134,13 @@ pub mod dlmm_vault {
         instructions::close_position::handle_dlmm_close_position(ctx)
     }
 
-    pub fn rebalance<'a, 'b, 'c, 'info>(
-        ctx: Context<'a, 'b, 'c, 'info, Rebalance<'info>>,
+    pub fn jup_swap<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, JupSwap<'info>>,
         jup_swap_data: Vec<u8>,
     ) -> Result<()> {
-        instructions::rebalance::handle_rebalance(ctx, jup_swap_data)
+        instructions::swap::handle_jup_swap(ctx, jup_swap_data)
     }
 
-    // TODO: Integration tests
     pub fn close_vault<'a, 'b, 'c, 'info>(
         ctx: Context<'a, 'b, 'c, 'info, CloseVault<'info>>,
     ) -> Result<()> {

@@ -5,7 +5,7 @@ use crate::{
     },
     ensure_signer_is_owner_or_operator,
     events::add_liquidity::AddLiquidityEvent,
-    DlmmVaultAccount, VaultErrorCode,
+    DlmmVaultAccount,
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};

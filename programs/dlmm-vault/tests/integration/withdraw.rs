@@ -1,6 +1,7 @@
 use anchor_lang::AnchorDeserialize;
 use dlmm_vault::events::deposit::DepositEvent;
 use dlmm_vault::events::withdraw::WithdrawEvent;
+use dlmm_vault::{FeeCompoundingStrategy, VolatilityStrategy};
 use litesvm::LiteSVM;
 use solana_keypair::{Keypair as SKeypair, Signer as SSigner};
 use solana_sdk::pubkey::Pubkey;
@@ -11,7 +12,10 @@ use crate::helpers::deposit_ix::deposit_vault_ix;
 use crate::helpers::event::find_event;
 use crate::helpers::initialize_ix::initialize_vault_ix;
 use crate::helpers::program::load_dlmm_vault_program;
-use crate::helpers::token::{create_and_fund_token_account, validate_token_account_balance};
+use crate::helpers::token::{
+    create_and_fund_token_account, create_and_fund_token_account_by_pubkey,
+    validate_token_account_balance,
+};
 use crate::helpers::transaction::prepare_tx;
 use crate::helpers::withdraw_ix::withdraw_vault_ix;
 
@@ -52,13 +56,22 @@ fn test_withdraw() {
         &anchor_spl::token::ID,
     );
 
-    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) = initialize_vault_ix(
+    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y, harvest_pda) = initialize_vault_ix(
         &user_clone,
         &user_clone,
         &USDC_MINT,
         &USDT_MINT,
         &USDC_USDT_POOL,
         &anchor_spl::token::ID,
+        &anchor_spl::token::ID,
+        true,
+        true,
+        FeeCompoundingStrategy::Aggressive,
+        VolatilityStrategy::Spot,
+        5,
+        false,
+        0,
+        &USDC_MINT,
         &anchor_spl::token::ID,
     );
 
@@ -84,8 +97,20 @@ fn test_withdraw() {
         &anchor_spl::token::ID,
     );
 
+    // Fund harvest mint account
+    let harvest_mint_balance = 2_000;
+    create_and_fund_token_account_by_pubkey(
+        &mut svm,
+        &vault_pda,
+        &USDC_MINT,
+        &harvest_pda,
+        harvest_mint_balance,
+        &anchor_spl::token::ID,
+    );
+
     let token_x_withdraw_amount = 10_000;
     let token_y_withdraw_amount = 5_000;
+    let harvest_mint_withdraw_amount = 2_000;
 
     let withdraw_ix = withdraw_vault_ix(
         &user_clone,
@@ -100,6 +125,11 @@ fn test_withdraw() {
         &anchor_spl::token::ID,
         token_x_withdraw_amount,
         token_y_withdraw_amount,
+        &user_ata_x,
+        &harvest_pda,
+        &USDC_MINT,
+        &anchor_spl::token::ID,
+        harvest_mint_withdraw_amount,
     );
 
     let tx = prepare_tx(&mut svm, &user.pubkey(), &[&user], &[withdraw_ix]);
@@ -135,6 +165,10 @@ fn test_withdraw() {
     let body = find_event(&meta.logs, b"WithdrawEvent");
     let ev = WithdrawEvent::try_from_slice(body.as_slice()).expect("borsh decode");
     assert_eq!(ev.vault_account, vault_pda);
-    assert_eq!(ev.token_x_withdraw_amount, token_x_withdraw_amount);
+    // In this case, the harvest mint is the token x mint, so they get withdrawn to the same destination
+    assert_eq!(
+        ev.token_x_withdraw_amount,
+        token_x_withdraw_amount + harvest_mint_withdraw_amount
+    );
     assert_eq!(ev.token_y_withdraw_amount, token_y_withdraw_amount);
 }

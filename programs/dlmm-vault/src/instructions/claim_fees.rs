@@ -5,7 +5,7 @@ use crate::{
     token_amount, DlmmVaultAccount, VaultErrorCode,
 };
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
 
 #[derive(Accounts)]
 pub struct DlmmClaimFees<'info> {
@@ -63,6 +63,9 @@ pub struct DlmmClaimFees<'info> {
     /// CHECK: Bin array upper account
     #[account(mut)]
     pub bin_array_upper: UncheckedAccount<'info>,
+    #[account(mut)]
+    /// Operator token Y account for fee collection
+    pub operator_token_y: InterfaceAccount<'info, TokenAccount>,
 }
 
 pub fn handle_dlmm_claim_fees<'a, 'b, 'c, 'info>(
@@ -125,13 +128,58 @@ pub fn handle_dlmm_claim_fees<'a, 'b, 'c, 'info>(
     let final_x_balance = token_amount(&final_x_info)?;
     let final_y_balance = token_amount(&final_y_info)?;
 
+    let x_accumulated = final_x_balance - initial_x_balance;
+    let y_accumulated = final_y_balance - initial_y_balance;
+
+    // Fees are collected on the Y side, and set to 50bps of the fees claimed for token Y
+    let y_fee = y_accumulated / 10_000 * 50;
+    if y_fee > 0 {
+        let signer_seeds: &[&[&[u8]]] = &[&[
+            b"dlmm_vault",
+            ctx.accounts.vault_account.owner.as_ref(),
+            ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
+            &[ctx.bumps.vault_account],
+        ]];
+        token_interface::transfer_checked(
+            CpiContext::new(
+                ctx.accounts.token_y_program.to_account_info(),
+                TransferChecked {
+                    from: ctx.accounts.vault_token_y.to_account_info(),
+                    to: ctx.accounts.operator_token_y.to_account_info(),
+                    authority: ctx.accounts.vault_account.to_account_info(),
+                    mint: ctx.accounts.token_y_mint.to_account_info(),
+                },
+            )
+            .with_signer(signer_seeds),
+            y_fee,
+            ctx.accounts.token_y_mint.decimals,
+        )?;
+    }
+
+    let mut x_to_harvest: u64 = 0;
+    let mut y_to_harvest: u64 = 0;
+
+    // Check if the vault account has harvest_bps > 0. If so, delegate tokens from the vault ATAs into the harvest
+    // token accounts
+    if ctx.accounts.vault_account.harvest_bps > 0 {
+        let harvest_bps = ctx.accounts.vault_account.harvest_bps;
+        let remaining_y = y_accumulated - y_fee;
+
+        x_to_harvest = x_accumulated / 10_000 * harvest_bps as u64;
+        y_to_harvest = remaining_y / 10_000 * harvest_bps as u64;
+
+        ctx.accounts.vault_account.virtual_token_x_harvest += x_to_harvest;
+        ctx.accounts.vault_account.virtual_token_y_harvest += y_to_harvest;
+    }
+
     emit!(ClaimFeesEvent {
         vault_account: ctx.accounts.vault_account.key(),
         position: ctx.accounts.position.key(),
-        initial_x_balance: initial_x_balance,
-        initial_y_balance: initial_y_balance,
-        final_x_balance: final_x_balance,
-        final_y_balance: final_y_balance,
+        y_compounded: y_accumulated - y_fee - y_to_harvest,
+        x_compounded: x_accumulated - x_to_harvest,
+        y_fee_paid: y_fee,
+        x_harvested: x_to_harvest,
+        y_harvested: y_to_harvest,
         signer: ctx.accounts.signer.key(),
     });
 

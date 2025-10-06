@@ -18,7 +18,7 @@ pub fn deposit_vault_ix(
     token_x_deposit_amount: u64,
     token_y_deposit_amount: u64,
 ) -> Instruction {
-    let ix_data = dlmm_vault::instruction::DlmmDeposit {
+    let ix_data = dlmm_vault::instruction::Deposit {
         token_x_deposit_amount,
         token_y_deposit_amount,
     }

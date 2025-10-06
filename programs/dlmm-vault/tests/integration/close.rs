@@ -1,5 +1,6 @@
 use anchor_lang::AnchorDeserialize;
 use dlmm_vault::events::deposit::DepositEvent;
+use dlmm_vault::{FeeCompoundingStrategy, VolatilityStrategy};
 use litesvm::LiteSVM;
 use solana_keypair::{Keypair as SKeypair, Signer as SSigner};
 use solana_sdk::native_token::LAMPORTS_PER_SOL;
@@ -53,13 +54,22 @@ fn test_close() {
         &anchor_spl::token::ID,
     );
 
-    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) = initialize_vault_ix(
+    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y, _) = initialize_vault_ix(
         &user_clone,
         &user_clone,
         &USDC_MINT,
         &USDT_MINT,
         &USDC_USDT_POOL,
         &anchor_spl::token::ID,
+        &anchor_spl::token::ID,
+        true,
+        true,
+        FeeCompoundingStrategy::Aggressive,
+        VolatilityStrategy::Spot,
+        5,
+        false,
+        0,
+        &USDC_MINT,
         &anchor_spl::token::ID,
     );
 

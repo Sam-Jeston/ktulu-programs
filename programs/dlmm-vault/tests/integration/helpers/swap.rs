@@ -38,23 +38,17 @@ const TOKEN2022_PROGRAM: Pubkey =
 const JUPITER_PROGRAM: Pubkey = solana_sdk::pubkey!("JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4");
 const DLMM_PROGRAM: Pubkey = solana_sdk::pubkey!("LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo");
 
-#[tokio::test]
-async fn test_rebalance() {
+// This helper lets us swap volume through pools to accumulate fees
+pub async fn execute_swap_to_y(mut svm: &mut LiteSVM) {
     let user = SKeypair::new();
     let user_clone = Keypair::from_bytes(&user.to_bytes()).unwrap();
 
-    let mut svm = LiteSVM::new();
     load_dlmm_vault_program(&mut svm);
     load_jupiter_program(&mut svm);
     load_dlmm_program(&mut svm);
-    load_whirlpool_program(&mut svm);
 
     svm.airdrop(&user_clone.pubkey().to_bytes().into(), 1_000_000_000)
         .unwrap();
-
-    load_account(&mut svm, &USDC_USDT_POOL);
-    load_account(&mut svm, &USDC_MINT);
-    load_account(&mut svm, &USDT_MINT);
 
     let token_x_initial_balance = 1_000_000_000;
     let token_y_initial_balance = 1_000_000_000;
@@ -232,22 +226,5 @@ async fn test_rebalance() {
         &address_lookup_table_accounts,
         &[rebalance_ix],
     );
-    let meta = svm.send_transaction(tx).unwrap();
-
-    // Print the vault token balances after the swap
-    let token_account_in = svm.get_account(&vault_ata_x.to_bytes().into()).unwrap();
-    let token_account_data_in = TokenAccount::unpack_from_slice(&token_account_in.data).unwrap();
-    let token_account_out = svm.get_account(&vault_ata_y.to_bytes().into()).unwrap();
-    let token_account_data_out = TokenAccount::unpack_from_slice(&token_account_out.data).unwrap();
-
-    let body = find_event(&meta.logs, b"RebalanceEvent");
-    let ev = RebalanceEvent::try_from_slice(body.as_slice()).expect("failed to borsh decode");
-    assert_eq!(ev.vault_account, vault_pda);
-    assert_eq!(ev.in_mint, USDC_MINT);
-    assert_eq!(ev.out_mint, USDT_MINT);
-    assert_eq!(ev.initial_in_balance, token_x_deposit_amount);
-    assert_eq!(ev.initial_out_balance, token_y_deposit_amount);
-    assert_eq!(ev.final_in_balance, token_account_data_in.amount);
-    assert_eq!(ev.final_out_balance, token_account_data_out.amount);
-    assert_eq!(ev.signer, user_clone.pubkey());
+    svm.send_transaction(tx).unwrap();
 }

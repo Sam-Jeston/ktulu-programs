@@ -2,6 +2,7 @@ use anchor_lang::AnchorDeserialize;
 use dlmm_vault::dlmm::types::BinLiquidityDistribution;
 use dlmm_vault::events::add_liquidity::AddLiquidityEvent;
 use dlmm_vault::events::create_position::CreatePositionEvent;
+use dlmm_vault::{FeeCompoundingStrategy, VolatilityStrategy};
 use litesvm::LiteSVM;
 use solana_keypair::{Keypair as SKeypair, Signer as SSigner};
 use solana_sdk::pubkey::Pubkey;
@@ -64,7 +65,7 @@ fn test_token2022_integration() {
         &token_y_program,
     );
 
-    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y) = initialize_vault_ix(
+    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y, _) = initialize_vault_ix(
         &user_clone,
         &user_clone,
         &PUMP_MINT,
@@ -72,6 +73,15 @@ fn test_token2022_integration() {
         &PUMP_USDC_POOL,
         &token_x_program,
         &token_y_program,
+        true,
+        true,
+        FeeCompoundingStrategy::Aggressive,
+        VolatilityStrategy::Spot,
+        5,
+        false,
+        0,
+        &PUMP_MINT,
+        &token_x_program,
     );
 
     let token_x_deposit_amount = 10_000;

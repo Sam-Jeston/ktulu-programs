@@ -24,6 +24,7 @@ pub fn claim_fees_ix(
     bin_array_upper: &Pubkey,
     min_bin_id: i32,
     max_bin_id: i32,
+    operator_token_y: &Pubkey,
 ) -> Instruction {
     let ix_data = dlmm_vault::instruction::ClaimFees {
         min_bin_id,
@@ -49,6 +50,7 @@ pub fn claim_fees_ix(
         memo_program: memo_program.clone(),
         bin_array_lower: bin_array_lower.clone(),
         bin_array_upper: bin_array_upper.clone(),
+        operator_token_y: operator_token_y.clone(),
     }
     .to_account_metas(None);
 
