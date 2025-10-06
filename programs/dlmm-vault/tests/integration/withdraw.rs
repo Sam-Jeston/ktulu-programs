@@ -154,7 +154,8 @@ fn test_withdraw() {
     validate_token_account_balance(
         &mut svm,
         &user_ata_x,
-        token_x_initial_balance + token_x_withdraw_amount,
+        // In this case, the harvest mint is the token x mint, so they get withdrawn to the same destination
+        token_x_initial_balance + token_x_withdraw_amount + harvest_mint_withdraw_amount,
     );
     validate_token_account_balance(
         &mut svm,
@@ -165,10 +166,10 @@ fn test_withdraw() {
     let body = find_event(&meta.logs, b"WithdrawEvent");
     let ev = WithdrawEvent::try_from_slice(body.as_slice()).expect("borsh decode");
     assert_eq!(ev.vault_account, vault_pda);
-    // In this case, the harvest mint is the token x mint, so they get withdrawn to the same destination
-    assert_eq!(
-        ev.token_x_withdraw_amount,
-        token_x_withdraw_amount + harvest_mint_withdraw_amount
-    );
+    assert_eq!(ev.token_x_withdraw_amount, token_x_withdraw_amount);
     assert_eq!(ev.token_y_withdraw_amount, token_y_withdraw_amount);
+    assert_eq!(
+        ev.harvest_token_withdraw_amount,
+        harvest_mint_withdraw_amount
+    );
 }

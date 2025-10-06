@@ -14,7 +14,6 @@ pub mod load_fixture;
 pub mod log;
 pub mod program;
 pub mod remove_liquidity_ix;
-pub mod swap;
 pub mod token;
 pub mod transaction;
 pub mod withdraw_ix;

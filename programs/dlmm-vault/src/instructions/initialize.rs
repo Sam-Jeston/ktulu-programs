@@ -20,6 +20,7 @@ pub struct Initialize<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     pub system_program: Program<'info, System>,
+    /// CHECK: DLMM pool account
     pub dlmm_pool: UncheckedAccount<'info>,
 
     pub token_x_mint: InterfaceAccount<'info, Mint>,

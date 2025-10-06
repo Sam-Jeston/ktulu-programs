@@ -31,7 +31,11 @@ pub struct DlmmCreatePosition<'info> {
     pub dlmm_program: UncheckedAccount<'info>,
 
     pub signer: Signer<'info>,
+
+    /// CHECK: Rent account
     pub rent: UncheckedAccount<'info>,
+
+    /// CHECK: System program
     pub system_program: UncheckedAccount<'info>,
 }
 

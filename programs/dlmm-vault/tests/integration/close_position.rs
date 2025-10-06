@@ -1,14 +1,11 @@
 use anchor_lang::AnchorDeserialize;
 use dlmm_vault::dlmm::types::{BinLiquidityDistribution, BinLiquidityReduction};
-use dlmm_vault::events::add_liquidity::AddLiquidityEvent;
 use dlmm_vault::events::claim_fees::ClaimFeesEvent;
 use dlmm_vault::events::close_position::ClosePositionEvent;
-use dlmm_vault::events::create_position::CreatePositionEvent;
 use dlmm_vault::events::remove_liquidity::RemoveLiquidityEvent;
 use dlmm_vault::{DlmmVaultAccount, FeeCompoundingStrategy, VolatilityStrategy};
 use litesvm::LiteSVM;
 use solana_keypair::{Keypair as SKeypair, Signer as SSigner};
-use solana_program_test::tokio;
 use solana_sdk::native_token::LAMPORTS_PER_SOL;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::{signature::Keypair, signer::Signer};
@@ -24,7 +21,6 @@ use crate::helpers::dlmm_pda::{
 use crate::helpers::event::find_event;
 use crate::helpers::initialize_ix::initialize_vault_ix;
 use crate::helpers::program::{load_dlmm_program, load_dlmm_vault_program};
-use crate::helpers::swap::execute_swap_to_y;
 use crate::helpers::token::{create_and_fund_token_account, validate_token_account_balance};
 use crate::helpers::transaction::prepare_tx;
 use crate::helpers::{
@@ -38,8 +34,8 @@ const USDT_MINT: Pubkey = solana_sdk::pubkey!("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11M
 const RENT_PROGRAM: Pubkey = solana_sdk::pubkey!("SysvarRent111111111111111111111111111111111");
 const MEMO_PROGRAM: Pubkey = solana_sdk::pubkey!("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
 
-#[tokio::test]
-async fn test_close_position() {
+#[test]
+fn test_close_position() {
     let user = SKeypair::new();
     let user_clone = Keypair::from_bytes(&user.to_bytes()).unwrap();
     let operator = SKeypair::new();
@@ -276,9 +272,6 @@ async fn test_close_position() {
         &dlmm_vault::dlmm::ID,
         &event_authority_pda,
     );
-
-    // Fire off a swap to accumulate fees
-    execute_swap_to_y(&mut svm).await;
 
     // Get the SOL balance of the user before sending the next transaction
     let sol_balance_before_close = svm
