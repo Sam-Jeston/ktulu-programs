@@ -26,17 +26,15 @@ pub struct CloseVault<'info> {
     pub vault_token_x: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
     pub vault_token_y: InterfaceAccount<'info, TokenAccount>,
+    #[account(mut)]
+    pub vault_harvest_token: InterfaceAccount<'info, TokenAccount>,
 
     pub token_x_mint: InterfaceAccount<'info, Mint>,
     pub token_x_program: Interface<'info, TokenInterface>,
     pub token_y_mint: InterfaceAccount<'info, Mint>,
     pub token_y_program: Interface<'info, TokenInterface>,
-
-    // Destination ATAs
-    #[account(mut)]
-    pub owner_ata_x: InterfaceAccount<'info, TokenAccount>,
-    #[account(mut)]
-    pub owner_ata_y: InterfaceAccount<'info, TokenAccount>,
+    pub harvest_mint: InterfaceAccount<'info, Mint>,
+    pub harvest_program: Interface<'info, TokenInterface>,
 }
 
 pub fn handle_close_vault(ctx: Context<CloseVault>) -> Result<()> {
@@ -55,6 +53,10 @@ pub fn handle_close_vault(ctx: Context<CloseVault>) -> Result<()> {
         ctx.accounts.vault_token_y.amount == 0,
         VaultErrorCode::NonZeroBalance
     );
+    require!(
+        ctx.accounts.vault_harvest_token.amount == 0,
+        VaultErrorCode::NonZeroBalance
+    );
 
     // The only user who can call `close` is the vault owner. Ensure the signer is the vault owner.
     ensure_signer_is_owner(&ctx.accounts.owner.key, &ctx.accounts.vault_account)?;
@@ -69,9 +71,16 @@ pub fn handle_close_vault(ctx: Context<CloseVault>) -> Result<()> {
     let signer = &[&seeds[..]];
 
     close_token_account(
+        &ctx.accounts.vault_harvest_token,
+        &ctx.accounts.owner.to_account_info(),
+        &ctx.accounts.vault_account.to_account_info(),
+        &ctx.accounts.harvest_program,
+        signer,
+    )?;
+    close_token_account(
         &ctx.accounts.vault_token_x,
-        &ctx.accounts.owner.to_account_info(), // lamports destination
-        &ctx.accounts.vault_account.to_account_info(), // authority
+        &ctx.accounts.owner.to_account_info(),
+        &ctx.accounts.vault_account.to_account_info(),
         &ctx.accounts.token_x_program,
         signer,
     )?;

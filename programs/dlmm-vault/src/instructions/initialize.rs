@@ -90,6 +90,9 @@ pub fn handle_initialize<'a, 'b, 'c, 'info>(
     ctx.accounts.vault_account.harvest_bps = harvest_bps;
     ctx.accounts.vault_account.virtual_token_x_harvest = 0;
     ctx.accounts.vault_account.virtual_token_y_harvest = 0;
+    ctx.accounts.vault_account.auto_compound = auto_compound;
+    ctx.accounts.vault_account.auto_rebalance = auto_rebalance;
+    ctx.accounts.vault_account.fee_compounding_strategy = fee_compounding_strategy.clone();
 
     emit!(InitializeEvent {
         vault_account: ctx.accounts.vault_account.key(),

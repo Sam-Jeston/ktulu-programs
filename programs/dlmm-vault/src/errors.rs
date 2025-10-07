@@ -19,4 +19,6 @@ pub enum VaultErrorCode {
     InvalidWidth,
     #[msg("Invalid harvest bps - maximum is 10_000")]
     InvalidHarvestBps,
+    #[msg("Auto-rebalance or harvest is not enabled - swapping not supported")]
+    AutoRebalanceOrHarvestNotEnabled,
 }

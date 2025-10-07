@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use crate::VaultErrorCode;
 use crate::{
     ensure_signer_is_owner_or_operator, events::rebalance::RebalanceEvent,
     jupiter::program::Jupiter, token_amount, DlmmVaultAccount,
@@ -42,6 +43,13 @@ pub fn handle_jup_swap<'a, 'b, 'c, 'info>(
 ) -> Result<()> {
     ensure_signer_is_owner_or_operator(&ctx.accounts.signer.key, &ctx.accounts.vault_account)?;
     require_keys_eq!(*ctx.accounts.jupiter_program.key, jupiter_program_id());
+
+    let rebalance_is_enabled = ctx.accounts.vault_account.auto_rebalance;
+    let harvest_is_enabled = ctx.accounts.vault_account.use_harvest_mint;
+    require!(
+        rebalance_is_enabled || harvest_is_enabled,
+        VaultErrorCode::AutoRebalanceOrHarvestNotEnabled
+    );
 
     let initial_in_balance = ctx.accounts.vault_input_token_account.amount;
     let initial_out_balance = ctx.accounts.vault_output_token_account.amount;
