@@ -2,7 +2,7 @@ use crate::{
     dlmm::{self, types::RemainingAccountsInfo},
     ensure_signer_is_owner_or_operator,
     events::claim_fees::ClaimFeesEvent,
-    token_amount, DlmmVaultAccount, VaultErrorCode,
+    mul_div_floor_u64, token_amount, DlmmVaultAccount, VaultErrorCode,
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
@@ -133,7 +133,7 @@ pub fn handle_dlmm_claim_fees<'a, 'b, 'c, 'info>(
     let y_accumulated = final_y_balance - initial_y_balance;
 
     // Fees are collected on the Y side, and set to 50bps of the fees claimed for token Y
-    let y_fee = y_accumulated / 10_000 * 50;
+    let y_fee = mul_div_floor_u64(y_accumulated, 50, 10_000);
     if y_fee > 0 {
         let signer_seeds: &[&[&[u8]]] = &[&[
             b"dlmm_vault",
@@ -166,8 +166,8 @@ pub fn handle_dlmm_claim_fees<'a, 'b, 'c, 'info>(
         let harvest_bps = ctx.accounts.vault_account.harvest_bps;
         let remaining_y = y_accumulated - y_fee;
 
-        x_to_harvest = x_accumulated / 10_000 * harvest_bps as u64;
-        y_to_harvest = remaining_y / 10_000 * harvest_bps as u64;
+        x_to_harvest = mul_div_floor_u64(x_accumulated, harvest_bps as u64, 10_000);
+        y_to_harvest = mul_div_floor_u64(remaining_y, harvest_bps as u64, 10_000);
 
         ctx.accounts.vault_account.virtual_token_x_harvest += x_to_harvest;
         ctx.accounts.vault_account.virtual_token_y_harvest += y_to_harvest;

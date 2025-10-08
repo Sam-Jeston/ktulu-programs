@@ -34,6 +34,12 @@ pub fn ensure_signer_is_owner_or_operator(
     Ok(())
 }
 
+#[inline]
+pub fn mul_div_floor_u64(val: u64, numerator: u64, denom: u64) -> u64 {
+    // Use u128 intermediates to avoid precision loss and overflow, then cast back down.
+    ((val as u128) * (numerator as u128) / (denom as u128)) as u64
+}
+
 #[cfg(test)]
 mod tests {
     use solana_sdk::{signature::Keypair, signer::Signer};
@@ -117,6 +123,20 @@ mod tests {
         assert_eq!(
             ensure_signer_is_owner_or_operator(&random_signer.pubkey(), &vault_account),
             Err(error!(VaultErrorCode::InvalidSigner))
+        );
+    }
+
+    #[test]
+    fn test_mul_div_floor_u64() {
+        assert_eq!(mul_div_floor_u64(1000, 50, 10_000), 5);
+        assert_eq!(mul_div_floor_u64(12000, 50, 10_000), 60);
+    }
+
+    #[test]
+    fn test_mul_div_floor_u64_does_not_overflow() {
+        assert_eq!(
+            mul_div_floor_u64(u64::MAX, 5, 10_000),
+            u64::MAX / 10_000 * 5
         );
     }
 }
