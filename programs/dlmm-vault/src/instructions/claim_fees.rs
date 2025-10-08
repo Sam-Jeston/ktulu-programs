@@ -10,6 +10,7 @@ use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, Tran
 #[derive(Accounts)]
 pub struct DlmmClaimFees<'info> {
     #[account(
+        mut,
         seeds = [b"dlmm_vault".as_ref(), vault_account.owner.as_ref(), vault_account.dlmm_pool_id.as_ref()],
         bump
     )]
