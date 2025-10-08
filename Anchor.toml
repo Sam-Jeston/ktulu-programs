@@ -3,7 +3,10 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-dlmm-vault = "7Y1iiXP68seqhZtyQ1fEwxCYJVmJztwvXBBnZvRn3DyC"
+dlmm_vault = "7Y1iiXP68seqhZtyQ1fEwxCYJVmJztwvXBBnZvRn3DyC"
+
+[programs.mainnet]
+dlmm_vault = "7Y1iiXP68seqhZtyQ1fEwxCYJVmJztwvXBBnZvRn3DyC"
 
 [provider]
 cluster = "Localnet"

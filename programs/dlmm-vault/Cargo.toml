@@ -16,6 +16,7 @@ cpi = ["no-entrypoint"]
 default = []
 idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 devnet = []
+mainnet = []
 
 [dependencies]
 anchor-spl = "0.31.0"
