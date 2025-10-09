@@ -17,4 +17,7 @@ pub struct InitializeEvent {
     pub bin_width: u16,
     pub operator: Pubkey,
     pub position_id: Pubkey,
+    pub use_harvest_mint: bool,
+    pub harvest_bps: u16,
+    pub harvest_mint: Pubkey,
 }

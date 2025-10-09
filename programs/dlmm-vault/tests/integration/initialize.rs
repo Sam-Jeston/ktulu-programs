@@ -44,8 +44,8 @@ fn test_initialize() {
         FeeCompoundingStrategy::Aggressive,
         VolatilityStrategy::Spot,
         5,
-        false,
-        0,
+        true,
+        25,
         &USDC_MINT,
         &anchor_spl::token::ID,
     );
@@ -73,4 +73,7 @@ fn test_initialize() {
     );
     assert_eq!(ev.operator, user_clone.pubkey());
     assert_eq!(ev.position_id, Pubkey::default());
+    assert_eq!(ev.use_harvest_mint, true);
+    assert_eq!(ev.harvest_bps, 25);
+    assert_eq!(ev.harvest_mint, USDC_MINT);
 }

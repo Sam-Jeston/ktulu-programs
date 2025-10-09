@@ -107,6 +107,9 @@ pub fn handle_initialize<'a, 'b, 'c, 'info>(
         bin_width: bin_width,
         operator: operator,
         position_id: Pubkey::default(),
+        use_harvest_mint,
+        harvest_bps: harvest_bps,
+        harvest_mint: ctx.accounts.harvest_mint.key(),
     });
 
     Ok(())
