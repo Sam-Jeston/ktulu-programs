@@ -5,6 +5,7 @@ pub mod close_position;
 pub mod close_vault;
 pub mod create_position;
 pub mod deposit;
+pub mod harvest;
 pub mod initialize;
 pub mod rebalance;
 pub mod remove_liquidity;

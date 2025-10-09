@@ -173,12 +173,12 @@ async fn test_rebalance() {
         get_address_lookup_table_accounts(&mut svm, response.address_lookup_table_addresses)
             .unwrap();
 
-    let ix_data = dlmm_vault::instruction::JupSwap {
-        jup_swap_data: response.swap_instruction.data,
+    let ix_data = dlmm_vault::instruction::HandleRebalance {
+        rebalance_data: response.swap_instruction.data,
     }
     .data();
 
-    let mut accounts = dlmm_vault::accounts::JupSwap {
+    let mut accounts = dlmm_vault::accounts::Rebalance {
         vault_account: vault_pda.clone(),
         signer: user_clone.pubkey(),
         input_mint: USDC_MINT.clone(),

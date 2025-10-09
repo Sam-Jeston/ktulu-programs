@@ -1,7 +1,6 @@
 // https://github.com/coral-xyz/anchor/issues/3401#issuecomment-2513466441
 #![allow(unexpected_cfgs)]
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount};
 
 pub mod instructions;
 pub use instructions::*;
@@ -134,11 +133,18 @@ pub mod dlmm_vault {
         instructions::close_position::handle_dlmm_close_position(ctx)
     }
 
-    pub fn jup_swap<'a, 'b, 'c, 'info>(
-        ctx: Context<'a, 'b, 'c, 'info, JupSwap<'info>>,
-        jup_swap_data: Vec<u8>,
+    pub fn handle_rebalance<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, Rebalance<'info>>,
+        rebalance_data: Vec<u8>,
     ) -> Result<()> {
-        instructions::swap::handle_jup_swap(ctx, jup_swap_data)
+        instructions::swap::handle_rebalance(ctx, rebalance_data)
+    }
+
+    pub fn handle_harvest<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, Harvest<'info>>,
+        harvest_data: Vec<u8>,
+    ) -> Result<()> {
+        instructions::swap::handle_harvest(ctx, harvest_data)
     }
 
     pub fn close_vault<'a, 'b, 'c, 'info>(

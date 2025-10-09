@@ -21,7 +21,12 @@ pub struct DlmmClaimRewards<'info> {
     #[account(mut)]
     pub reward_vault: InterfaceAccount<'info, TokenAccount>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::mint = reward_mint,
+        associated_token::authority = vault_account,
+        associated_token::token_program = token_program
+    )]
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
 
     pub reward_mint: InterfaceAccount<'info, Mint>,

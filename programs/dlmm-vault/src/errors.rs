@@ -21,4 +21,6 @@ pub enum VaultErrorCode {
     InvalidHarvestBps,
     #[msg("Auto-rebalance or harvest is not enabled - swapping not supported")]
     AutoRebalanceOrHarvestNotEnabled,
+    #[msg("Invalid swap amount")]
+    InvalidSwapAmount,
 }

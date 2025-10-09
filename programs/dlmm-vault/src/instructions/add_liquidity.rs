@@ -31,11 +31,19 @@ pub struct DlmmAddLiquidity<'info> {
     /// CHECK: Reserve account of token Y
     pub reserve_y: InterfaceAccount<'info, TokenAccount>,
 
-    #[account(mut)]
-    /// CHECK: User token X account
+    #[account(
+        mut,
+        associated_token::mint = token_x_mint,
+        associated_token::authority = vault_account,
+        associated_token::token_program = token_x_program
+    )]
     pub vault_token_x: InterfaceAccount<'info, TokenAccount>,
-    #[account(mut)]
-    /// CHECK: User token Y account
+    #[account(
+        mut,
+        associated_token::mint = token_y_mint,
+        associated_token::authority = vault_account,
+        associated_token::token_program = token_y_program
+    )]
     pub vault_token_y: InterfaceAccount<'info, TokenAccount>,
 
     /// CHECK: Mint account of token X

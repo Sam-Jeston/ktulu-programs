@@ -19,14 +19,24 @@ pub struct DlmmWithdraw<'info> {
     pub token_x_mint: InterfaceAccount<'info, Mint>,
     #[account(mut)]
     pub vault_owner_token_x: InterfaceAccount<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::mint = token_x_mint,
+        associated_token::authority = vault_account,
+        associated_token::token_program = token_x_program
+    )]
     pub vault_token_x_account: InterfaceAccount<'info, TokenAccount>,
     pub token_x_program: Interface<'info, TokenInterface>,
 
     pub token_y_mint: InterfaceAccount<'info, Mint>,
     #[account(mut)]
     pub vault_owner_token_y: InterfaceAccount<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::mint = token_y_mint,
+        associated_token::authority = vault_account,
+        associated_token::token_program = token_y_program
+    )]
     pub vault_token_y_account: InterfaceAccount<'info, TokenAccount>,
     pub token_y_program: Interface<'info, TokenInterface>,
 
