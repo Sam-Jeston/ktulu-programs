@@ -1,0 +1,14 @@
+{
+  "pubkey": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+  "account": {
+    "lamports": 98390921,
+    "data": [
+      "AQAAADGlMmUy9u11x5QIVhiU61ne+t1TBc+9R1cicSw8nMFQwkPDD5qfAAAGAQEAAABpABO3JyzZq1lqrNeYIqP0v/TOjpRY5+Ltw3RArhK21A==",
+      "base64"
+    ],
+    "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "executable": false,
+    "rentEpoch": 18446744073709551615,
+    "space": 82
+  }
+}

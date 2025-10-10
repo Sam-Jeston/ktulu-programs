@@ -23,4 +23,6 @@ pub enum VaultErrorCode {
     AutoRebalanceOrHarvestNotEnabled,
     #[msg("Invalid swap amount")]
     InvalidSwapAmount,
+    #[msg("Invalid operator fee")]
+    InvalidOperatorFee,
 }

@@ -1,5 +1,6 @@
 use anchor_lang::{AnchorDeserialize, Id, InstructionData, ToAccountMetas};
 use dlmm_vault::events::rebalance::RebalanceEvent;
+use dlmm_vault::harvest::HarvestEvent;
 use dlmm_vault::{FeeCompoundingStrategy, VolatilityStrategy};
 use litesvm::LiteSVM;
 use solana_compute_budget::compute_budget::ComputeBudget;
@@ -40,7 +41,7 @@ const JUPITER_PROGRAM: Pubkey = solana_sdk::pubkey!("JUP6LkbZbjS1jKKwapdHNy74zcZ
 const DLMM_PROGRAM: Pubkey = solana_sdk::pubkey!("LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo");
 
 #[tokio::test]
-async fn test_rebalance() {
+async fn test_harvest() {
     let user = SKeypair::new();
     let user_clone = Keypair::from_bytes(&user.to_bytes()).unwrap();
     let operator = SKeypair::new();
@@ -139,7 +140,7 @@ async fn test_rebalance() {
         amount: input_amount,
         input_mint: USDC_MINT,
         output_mint: USDT_MINT,
-        platform_fee_bps: Some(10),
+        platform_fee_bps: Some(100),
         // Limit quoting into DLMM for sake of testing
         dexes: Some("Meteora DLMM".to_string()),
         ..QuoteRequest::default()
@@ -157,7 +158,8 @@ async fn test_rebalance() {
     // let quote_response_json = serde_json::to_string(&quote_response).unwrap();
     // println!("quote response JSON: {}", quote_response_json);
 
-    let quote_response_json = "{\"inputMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\"inAmount\":\"45000\",\"outputMint\":\"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB\",\"outAmount\":\"44930\",\"otherAmountThreshold\":\"44930\",\"swapMode\":\"ExactIn\",\"slippageBps\":0,\"platformFee\":{\"amount\":\"44\",\"feeBps\":10},\"priceImpactPct\":\"0\",\"routePlan\":[{\"swapInfo\":{\"ammKey\":\"HTvjzsfX3yU6BUodCjZ5vZkUrAxMDTrBs3CJaq43ashR\",\"label\":\"Meteora DLMM\",\"inputMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\"outputMint\":\"So11111111111111111111111111111111111111112\",\"inAmount\":\"45000\",\"outAmount\":\"203111\",\"feeAmount\":\"6\",\"feeMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\"},\"percent\":100},{\"swapInfo\":{\"ammKey\":\"ANeTpNwPj4i62axSjUE4jZ7d3zvaj4sc9VFZyY1eYrtb\",\"label\":\"Meteora DLMM\",\"inputMint\":\"So11111111111111111111111111111111111111112\",\"outputMint\":\"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB\",\"inAmount\":\"203111\",\"outAmount\":\"44974\",\"feeAmount\":\"85\",\"feeMint\":\"So11111111111111111111111111111111111111112\"},\"percent\":100}],\"contextSlot\":372338675,\"timeTaken\":0.000504199}";
+    let quote_response_json = "{\"inputMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\"inAmount\":\"45000\",\"outputMint\":\"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB\",\"outAmount\":\"44515\",\"otherAmountThreshold\":\"44515\",\"swapMode\":\"ExactIn\",\"slippageBps\":0,\"platformFee\":{\"amount\":\"449\",\"feeBps\":100},\"priceImpactPct\":\"0.0001485968108222506963286582\",\"routePlan\":[{\"swapInfo\":{\"ammKey\":\"uGv7HFB1cKuxoAb36g65BzK8UVorpAR7SfrkwDZRzdJ\",\"label\":\"Meteora DLMM\",\"inputMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\"outputMint\":\"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB\",\"inAmount\":\"45000\",\"outAmount\":\"44964\",\"feeAmount\":\"9\",\"feeMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\"},\"percent\":100}],\"contextSlot\":372342403,\"timeTaken\":0.000481834}";
+
     let quote_response = serde_json::from_str(&quote_response_json).unwrap();
 
     let response = jupiter_swap_api_client
@@ -183,8 +185,8 @@ async fn test_rebalance() {
         get_address_lookup_table_accounts(&mut svm, response.address_lookup_table_addresses)
             .unwrap();
 
-    let ix_data = dlmm_vault::instruction::HandleRebalance {
-        rebalance_data: response.swap_instruction.data,
+    let ix_data = dlmm_vault::instruction::HandleHarvest {
+        harvest_data: response.swap_instruction.data,
     }
     .data();
 
@@ -259,8 +261,8 @@ async fn test_rebalance() {
     let token_account_out = svm.get_account(&vault_ata_y.to_bytes().into()).unwrap();
     let token_account_data_out = TokenAccount::unpack_from_slice(&token_account_out.data).unwrap();
 
-    let body = find_event(&meta.logs, b"RebalanceEvent");
-    let ev = RebalanceEvent::try_from_slice(body.as_slice()).expect("failed to borsh decode");
+    let body = find_event(&meta.logs, b"HarvestEvent");
+    let ev = HarvestEvent::try_from_slice(body.as_slice()).expect("failed to borsh decode");
     assert_eq!(ev.vault_account, vault_pda);
     assert_eq!(ev.in_mint, USDC_MINT);
     assert_eq!(ev.out_mint, USDT_MINT);

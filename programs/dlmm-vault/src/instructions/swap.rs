@@ -1,11 +1,11 @@
 use std::str::FromStr;
 
 use crate::harvest::HarvestEvent;
-use crate::VaultErrorCode;
 use crate::{
     ensure_signer_is_owner_or_operator, events::rebalance::RebalanceEvent,
     jupiter::program::Jupiter, token_amount, DlmmVaultAccount,
 };
+use crate::{mul_div_floor_u64, VaultErrorCode};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{instruction::Instruction, program::invoke_signed};
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
@@ -45,6 +45,17 @@ pub struct Rebalance<'info> {
     pub vault_output_token_account: InterfaceAccount<'info, TokenAccount>,
     pub output_token_program: Interface<'info, TokenInterface>,
 
+    #[account(
+        mut,
+        associated_token::mint = output_mint,
+        associated_token::authority = vault_account.operator,
+        associated_token::token_program = output_token_program
+    )]
+    // Fees must be collected in the ATA for the operator to ensure
+    // we can confirm this is the destination on the Jup swap and that
+    // the balance change is not malicious
+    pub operator_fee_account: InterfaceAccount<'info, TokenAccount>,
+
     pub jupiter_program: Program<'info, Jupiter>,
 }
 
@@ -64,6 +75,7 @@ pub fn handle_rebalance<'a, 'b, 'c, 'info>(
 
     let initial_in_balance = ctx.accounts.vault_input_token_account.amount;
     let initial_out_balance = ctx.accounts.vault_output_token_account.amount;
+    let initial_operator_fee_balance = ctx.accounts.operator_fee_account.amount;
 
     let accounts: Vec<AccountMeta> = ctx
         .remaining_accounts
@@ -95,11 +107,26 @@ pub fn handle_rebalance<'a, 'b, 'c, 'info>(
         }
     }
 
+    // Platform fee account is between instruction 6 and 10
+    let mut operator_fee_account_included = false;
+    let mut i = 6;
+    while i <= 10 {
+        if accounts[i].pubkey == ctx.accounts.operator_fee_account.key() {
+            operator_fee_account_included = true;
+        }
+
+        i += 1;
+    }
+
     // NOTE: we could get more precise and match the descriminator of the data to know exactly which accounts are which,
     // but this is pretty safe, as it prevents platform fee account being included, which is where an attacker might try
     // to drain to pass the balance validation post-swap
     require!(vault_input_included, VaultErrorCode::InvalidTokenAccount);
     require!(vault_output_included, VaultErrorCode::InvalidTokenAccount);
+    require!(
+        operator_fee_account_included,
+        VaultErrorCode::InvalidTokenAccount
+    );
 
     let accounts_infos: Vec<AccountInfo> = ctx
         .remaining_accounts
@@ -129,6 +156,8 @@ pub fn handle_rebalance<'a, 'b, 'c, 'info>(
     let final_out_info = ctx.accounts.vault_output_token_account.to_account_info();
     let final_in_balance = token_amount(&final_in_info)?;
     let final_out_balance = token_amount(&final_out_info)?;
+    let final_operator_fee_balance =
+        token_amount(&ctx.accounts.operator_fee_account.to_account_info())?;
 
     // Last safety step. Final in should be less than initial in
     require!(
@@ -138,6 +167,15 @@ pub fn handle_rebalance<'a, 'b, 'c, 'info>(
     require!(
         final_out_balance > initial_out_balance,
         VaultErrorCode::InvalidSwapAmount
+    );
+
+    // Max operator fee should be 10bps of the total out.
+    let out_diff = final_out_balance - initial_out_balance;
+    let operator_fee_diff = final_operator_fee_balance - initial_operator_fee_balance;
+    let max_operator_fee = mul_div_floor_u64(out_diff, 10, 10_000);
+    require!(
+        operator_fee_diff <= max_operator_fee,
+        VaultErrorCode::InvalidOperatorFee
     );
 
     emit!(RebalanceEvent {
@@ -178,14 +216,23 @@ pub struct Harvest<'info> {
     pub output_mint: InterfaceAccount<'info, Mint>,
     #[account(
         mut,
-        token::mint = output_mint,
-        token::authority = vault_account,
-        token::token_program = output_token_program,
-        seeds = [b"harvest".as_ref(), vault_account.key().as_ref()],
-        bump,
+        associated_token::mint = output_mint,
+        associated_token::authority = vault_account,
+        associated_token::token_program = output_token_program,
     )]
     pub vault_output_token_account: InterfaceAccount<'info, TokenAccount>,
     pub output_token_program: Interface<'info, TokenInterface>,
+
+    #[account(
+        mut,
+        associated_token::mint = output_mint,
+        associated_token::authority = vault_account.operator,
+        associated_token::token_program = output_token_program
+    )]
+    // Fees must be collected in the ATA for the operator to ensure
+    // we can confirm this is the destination on the Jup swap and that
+    // the balance change is not malicious
+    pub operator_fee_account: InterfaceAccount<'info, TokenAccount>,
 
     pub jupiter_program: Program<'info, Jupiter>,
 }
@@ -206,6 +253,7 @@ pub fn handle_harvest<'a, 'b, 'c, 'info>(
 
     let initial_in_balance = ctx.accounts.vault_input_token_account.amount;
     let initial_out_balance = ctx.accounts.vault_output_token_account.amount;
+    let initial_operator_fee_balance = ctx.accounts.operator_fee_account.amount;
 
     let accounts: Vec<AccountMeta> = ctx
         .remaining_accounts
@@ -237,11 +285,26 @@ pub fn handle_harvest<'a, 'b, 'c, 'info>(
         }
     }
 
+    // Platform fee account is between instruction 6 and 10
+    let mut operator_fee_account_included = false;
+    let mut i = 6;
+    while i <= 10 {
+        if accounts[i].pubkey == ctx.accounts.operator_fee_account.key() {
+            operator_fee_account_included = true;
+        }
+
+        i += 1;
+    }
+
     // NOTE: we could get more precise and match the descriminator of the data to know exactly which accounts are which,
     // but this is pretty safe, as it prevents platform fee account being included, which is where an attacker might try
     // to drain to pass the balance validation post-swap
     require!(vault_input_included, VaultErrorCode::InvalidTokenAccount);
     require!(vault_output_included, VaultErrorCode::InvalidTokenAccount);
+    require!(
+        operator_fee_account_included,
+        VaultErrorCode::InvalidTokenAccount
+    );
 
     let accounts_infos: Vec<AccountInfo> = ctx
         .remaining_accounts
@@ -271,6 +334,8 @@ pub fn handle_harvest<'a, 'b, 'c, 'info>(
     let final_out_info = ctx.accounts.vault_output_token_account.to_account_info();
     let final_in_balance = token_amount(&final_in_info)?;
     let final_out_balance = token_amount(&final_out_info)?;
+    let final_operator_fee_balance =
+        token_amount(&ctx.accounts.operator_fee_account.to_account_info())?;
 
     // Last safety step. Final in should be less than initial in
     require!(
@@ -280,6 +345,15 @@ pub fn handle_harvest<'a, 'b, 'c, 'info>(
     require!(
         final_out_balance > initial_out_balance,
         VaultErrorCode::InvalidSwapAmount
+    );
+
+    // Ensure the harvest fee account has not consumed more than 1% of the output
+    let out_diff = final_out_balance - initial_out_balance;
+    let operator_fee_diff = final_operator_fee_balance - initial_operator_fee_balance;
+    let max_operator_fee = mul_div_floor_u64(out_diff, 110, 10_000);
+    require!(
+        operator_fee_diff <= max_operator_fee,
+        VaultErrorCode::InvalidOperatorFee
     );
 
     emit!(HarvestEvent {
