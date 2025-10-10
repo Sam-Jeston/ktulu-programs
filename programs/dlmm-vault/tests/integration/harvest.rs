@@ -21,7 +21,9 @@ use crate::helpers::initialize_ix::initialize_vault_ix;
 use crate::helpers::program::{
     load_dlmm_program, load_dlmm_vault_program, load_jupiter_program, load_whirlpool_program,
 };
-use crate::helpers::token::create_and_fund_token_account;
+use crate::helpers::token::{
+    create_and_fund_token_account, create_and_fund_token_account_by_pubkey,
+};
 use crate::helpers::transaction::{prepare_tx, prepare_v0_tx};
 
 use jup_swap::{
@@ -85,7 +87,7 @@ async fn test_harvest() {
         &anchor_spl::token::ID,
     );
 
-    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y, _) = initialize_vault_ix(
+    let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y, harvest_pda) = initialize_vault_ix(
         &user_clone,
         &operator_clone,
         &USDC_MINT,
@@ -100,7 +102,7 @@ async fn test_harvest() {
         5,
         false,
         0,
-        &USDC_MINT,
+        &USDT_MINT,
         &anchor_spl::token::ID,
     );
 
@@ -171,6 +173,7 @@ async fn test_harvest() {
                 wrap_and_unwrap_sol: false,
                 fee_account: Some(operator_ata_y.clone()),
                 dynamic_compute_unit_limit: true,
+                destination_token_account: Some(harvest_pda.clone()),
                 dynamic_slippage: Some(DynamicSlippageSettings {
                     min_bps: Some(50),
                     max_bps: Some(1000),
@@ -197,7 +200,7 @@ async fn test_harvest() {
         vault_input_token_account: vault_ata_x.clone(),
         input_token_program: anchor_spl::token::ID.clone(),
         output_mint: USDT_MINT.clone(),
-        vault_output_token_account: vault_ata_y.clone(),
+        vault_output_token_account: harvest_pda.clone(),
         output_token_program: anchor_spl::token::ID.clone(),
         operator_fee_account: operator_ata_y.clone(),
         jupiter_program: dlmm_vault::jupiter::program::Jupiter::id()
@@ -212,6 +215,7 @@ async fn test_harvest() {
         if account.pubkey != anchor_spl::token::ID
             && account.pubkey != TOKEN2022_PROGRAM
             && account.pubkey != JUPITER_PROGRAM
+            && account.pubkey != harvest_pda
             && account.pubkey != vault_ata_x
             && account.pubkey != vault_ata_y
             && account.pubkey != operator_ata_y
@@ -258,7 +262,7 @@ async fn test_harvest() {
     // Print the vault token balances after the swap
     let token_account_in = svm.get_account(&vault_ata_x.to_bytes().into()).unwrap();
     let token_account_data_in = TokenAccount::unpack_from_slice(&token_account_in.data).unwrap();
-    let token_account_out = svm.get_account(&vault_ata_y.to_bytes().into()).unwrap();
+    let token_account_out = svm.get_account(&harvest_pda.to_bytes().into()).unwrap();
     let token_account_data_out = TokenAccount::unpack_from_slice(&token_account_out.data).unwrap();
 
     let body = find_event(&meta.logs, b"HarvestEvent");
@@ -267,7 +271,7 @@ async fn test_harvest() {
     assert_eq!(ev.in_mint, USDC_MINT);
     assert_eq!(ev.out_mint, USDT_MINT);
     assert_eq!(ev.initial_in_balance, token_x_deposit_amount);
-    assert_eq!(ev.initial_out_balance, token_y_deposit_amount);
+    assert_eq!(ev.initial_out_balance, 0);
     assert_eq!(ev.final_in_balance, token_account_data_in.amount);
     assert_eq!(ev.final_out_balance, token_account_data_out.amount);
     assert_eq!(ev.signer, user_clone.pubkey());

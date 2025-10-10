@@ -215,10 +215,11 @@ pub struct Harvest<'info> {
 
     pub output_mint: InterfaceAccount<'info, Mint>,
     #[account(
-        mut,
-        associated_token::mint = output_mint,
-        associated_token::authority = vault_account,
-        associated_token::token_program = output_token_program,
+        token::mint = output_mint,
+        token::authority = vault_account,
+        token::token_program = output_token_program,
+        seeds = [b"harvest".as_ref(), vault_account.key().as_ref()],
+        bump,
     )]
     pub vault_output_token_account: InterfaceAccount<'info, TokenAccount>,
     pub output_token_program: Interface<'info, TokenInterface>,
