@@ -4,12 +4,13 @@ This vault program allows the auto-compounding, auto-rebalancing and auto-harves
 
 ## Auto-Compounding
 
-If only auto-compounding is enabled, the user is responsible for monitoring their position pricing, but the operator will claim and compound fees into the active position when economically viable to do so. The compounding strategy determines how the claimed fees are applied into the position. If the conservative strategy is used (which it is by default), then then all tokens on the wider side of liquidity from the active bin will be consumed, and appropriately ratiod against the narrower side. This is best illustrated with an example:
+If only auto-compounding is enabled, the user is responsible for monitoring their position pricing, but the operator will claim and compound fees into the active position when economically viable to do so. The compounding strategy determines how the claimed fees are applied into the position. If the conservative strategy is used (which it is by default), then fee compounding only occurs if the active bin is within the middle range of bins for the position. To clarify with an example:
 
-- The position in vault was opened with a width of 20, and the active bin ID on opening was 0.
-- Upon claiming, the active bin ID is 5. All of token Y fees claimed will be distributed between bin ID -10 and 5. Half of the token X fees claimed will be distributed between bin ID 5 - 10. This approach looks to minimise impermament loss when compounding fees during volatile price action.
+- The position in vault was opened with a width of 20, and the active bin ID on opening was 0. The middle 50% range for the position is considered bins -5 - 5.
+- Enough fees have accumulated to trigger an auto-compound, hower the active bin is currently -7, so no action is taken.
+- Upon re-evaluation after X time, the active bin is now -3, which will trigger an autocompounding of fees back into the position.
 
-The aggressive compounding strategy distributes all claimed fees in the available bins, so to the above example, 100% of token X fees claimed would be distributed between bin ID 5 - 10.
+The aggressive compounding strategy distributes all claimed fees into the position regardless of active bin.
 
 ## Auto-Rebalancing
 
