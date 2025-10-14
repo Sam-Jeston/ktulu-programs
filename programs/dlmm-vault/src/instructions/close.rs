@@ -7,7 +7,7 @@ use anchor_spl::token_interface::{
 };
 
 use crate::close_vault::CloseVaultEvent;
-use crate::{ensure_signer_is_owner, DlmmVaultAccount, VaultErrorCode};
+use crate::{ensure_signer_is_owner, token_amount, DlmmVaultAccount, VaultErrorCode};
 
 #[derive(Accounts)]
 pub struct CloseVault<'info> {
@@ -54,21 +54,18 @@ pub fn handle_close_vault(ctx: Context<CloseVault>) -> Result<()> {
     );
 
     // If any token account has a balance,
+    let token_x_info = ctx.accounts.vault_token_x.to_account_info();
+    let token_y_info = ctx.accounts.vault_token_y.to_account_info();
+    let harvest_token_info = ctx.accounts.vault_harvest_token.to_account_info();
+    let token_x_balance = token_amount(&token_x_info)?;
+    let token_y_balance = token_amount(&token_y_info)?;
+    let harvest_token_balance = token_amount(&harvest_token_info)?;
 
     // Ensure the token balances are zero. If they aren't, a withdraw instruction is
     // required first.
-    require!(
-        ctx.accounts.vault_token_x.amount == 0,
-        VaultErrorCode::NonZeroBalance
-    );
-    require!(
-        ctx.accounts.vault_token_y.amount == 0,
-        VaultErrorCode::NonZeroBalance
-    );
-    require!(
-        ctx.accounts.vault_harvest_token.amount == 0,
-        VaultErrorCode::NonZeroBalance
-    );
+    require!(token_x_balance == 0, VaultErrorCode::NonZeroBalance);
+    require!(token_y_balance == 0, VaultErrorCode::NonZeroBalance);
+    require!(harvest_token_balance == 0, VaultErrorCode::NonZeroBalance);
 
     // The only user who can call `close` is the vault owner. Ensure the signer is the vault owner.
     ensure_signer_is_owner(&ctx.accounts.owner.key, &ctx.accounts.vault_account)?;
