@@ -19,7 +19,7 @@ pub use helpers::*;
 
 declare_program!(dlmm);
 declare_program!(jupiter);
-use crate::dlmm::types::{BinLiquidityDistribution, BinLiquidityReduction};
+use crate::dlmm::types::{BinLiquidityDistribution, BinLiquidityReduction, StrategyParameters};
 
 declare_id!("7Y1iiXP68seqhZtyQ1fEwxCYJVmJztwvXBBnZvRn3DyC");
 
@@ -104,6 +104,24 @@ pub mod dlmm_vault {
             amount_x,
             amount_y,
             bin_liquidity_dist,
+        )
+    }
+
+    pub fn add_liquidity_by_strategy<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, DlmmAddLiquidity<'info>>,
+        amount_x: u64,
+        amount_y: u64,
+        active_id: i32,
+        max_active_bin_slippage: i32,
+        strategy_parameters: StrategyParameters,
+    ) -> Result<()> {
+        instructions::add_liquidity::handle_dlmm_add_liquidity_by_strategy(
+            ctx,
+            amount_x,
+            amount_y,
+            active_id,
+            max_active_bin_slippage,
+            strategy_parameters,
         )
     }
 

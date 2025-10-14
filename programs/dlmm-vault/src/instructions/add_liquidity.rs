@@ -1,10 +1,13 @@
 use crate::{
     dlmm::{
         self,
-        types::{BinLiquidityDistribution, LiquidityParameter, RemainingAccountsInfo},
+        types::{
+            BinLiquidityDistribution, LiquidityParameter, LiquidityParameterByStrategy,
+            RemainingAccountsInfo, StrategyParameters,
+        },
     },
     ensure_signer_is_owner_or_operator,
-    events::add_liquidity::AddLiquidityEvent,
+    events::add_liquidity::{AddLiquidityByStrategyEvent, AddLiquidityEvent},
     DlmmVaultAccount,
 };
 use anchor_lang::prelude::*;
@@ -142,6 +145,85 @@ pub fn handle_dlmm_add_liquidity<'a, 'b, 'c, 'info>(
         token_x_amount: amount_x,
         token_y_amount: amount_y,
         bin_liquidity_dist,
+    });
+
+    Ok(())
+}
+
+pub fn handle_dlmm_add_liquidity_by_strategy<'a, 'b, 'c, 'info>(
+    ctx: Context<'a, 'b, 'c, 'info, DlmmAddLiquidity<'info>>,
+    amount_x: u64,
+    amount_y: u64,
+    active_id: i32,
+    max_active_bin_slippage: i32,
+    strategy_parameters: StrategyParameters,
+) -> Result<()> {
+    // Position creation is valid for both the owner and the operator
+    ensure_signer_is_owner_or_operator(&ctx.accounts.signer.key, &ctx.accounts.vault_account)?;
+
+    let accounts = dlmm::cpi::accounts::AddLiquidityByStrategy2 {
+        lb_pair: ctx.accounts.lb_pair.to_account_info(),
+        bin_array_bitmap_extension: ctx
+            .accounts
+            .bin_array_bitmap_extension
+            .as_ref()
+            .map(|account| account.to_account_info()),
+        reserve_x: ctx.accounts.reserve_x.to_account_info(),
+        reserve_y: ctx.accounts.reserve_y.to_account_info(),
+        user_token_x: ctx.accounts.vault_token_x.to_account_info(),
+        user_token_y: ctx.accounts.vault_token_y.to_account_info(),
+        token_x_mint: ctx.accounts.token_x_mint.to_account_info(),
+        token_y_mint: ctx.accounts.token_y_mint.to_account_info(),
+        position: ctx.accounts.position.to_account_info(),
+        sender: ctx.accounts.vault_account.to_account_info(),
+        token_x_program: ctx.accounts.token_x_program.to_account_info(),
+        token_y_program: ctx.accounts.token_y_program.to_account_info(),
+        event_authority: ctx.accounts.event_authority.to_account_info(),
+        program: ctx.accounts.dlmm_program.to_account_info(),
+    };
+
+    let signer_seeds: &[&[&[u8]]] = &[&[
+        b"dlmm_vault",
+        ctx.accounts.vault_account.owner.as_ref(),
+        ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
+        &[ctx.bumps.vault_account],
+    ]];
+
+    let mut rem: Vec<AccountInfo<'info>> = Vec::with_capacity(2);
+    rem.push(ctx.accounts.bin_array_lower.to_account_info());
+    rem.push(ctx.accounts.bin_array_upper.to_account_info());
+
+    let cpi_context = CpiContext::new(ctx.accounts.dlmm_program.to_account_info(), accounts)
+        .with_signer(signer_seeds)
+        .with_remaining_accounts(rem);
+
+    let liquidity_parameter = LiquidityParameterByStrategy {
+        amount_x,
+        amount_y,
+        active_id,
+        max_active_bin_slippage,
+        strategy_parameters,
+    };
+
+    // Explicitly have no support for any Token2022 hooks at this point in time. Vaults deposits do not
+    // forward remaining accounts, ensuring that if any hooks are required, that the vault cannot be funded
+    let remaining_accounts_info = RemainingAccountsInfo { slices: vec![] };
+
+    dlmm::cpi::add_liquidity_by_strategy2(
+        cpi_context,
+        liquidity_parameter,
+        remaining_accounts_info,
+    )?;
+
+    emit!(AddLiquidityByStrategyEvent {
+        vault_account: ctx.accounts.vault_account.key(),
+        position: ctx.accounts.position.key(),
+        signer: ctx.accounts.signer.key(),
+        token_x_amount: amount_x,
+        token_y_amount: amount_y,
+        active_id,
+        max_active_bin_slippage,
+        strategy_parameters,
     });
 
     Ok(())
