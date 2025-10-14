@@ -63,8 +63,8 @@ pub fn handle_deposit<'a, 'b, 'c, 'info>(
         return Err(error!(VaultErrorCode::InvalidTokenAccount));
     }
 
-    // Deposit amounts must be greater than 0
-    if token_x_deposit_amount == 0 || token_y_deposit_amount == 0 {
+    // At least one deposit amount must be greater than 0
+    if token_x_deposit_amount == 0 && token_y_deposit_amount == 0 {
         return Err(error!(VaultErrorCode::InvalidDepositAmount));
     }
 

@@ -175,7 +175,7 @@ fn test_deposit_zero_amount() {
         &anchor_spl::token::ID,
     );
 
-    let token_x_deposit_amount = 10_000;
+    let token_x_deposit_amount = 0;
     let token_y_deposit_amount = 0;
 
     let deposit_ix = deposit_vault_ix(
