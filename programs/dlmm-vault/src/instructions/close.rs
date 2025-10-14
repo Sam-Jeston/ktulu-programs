@@ -53,6 +53,8 @@ pub fn handle_close_vault(ctx: Context<CloseVault>) -> Result<()> {
         VaultErrorCode::PositionStillOpen
     );
 
+    // If any token account has a balance,
+
     // Ensure the token balances are zero. If they aren't, a withdraw instruction is
     // required first.
     require!(

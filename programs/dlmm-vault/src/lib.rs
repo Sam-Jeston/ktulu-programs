@@ -79,6 +79,12 @@ pub mod dlmm_vault {
         )
     }
 
+    pub fn withdraw_all<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, DlmmWithdraw<'info>>,
+    ) -> Result<()> {
+        instructions::withdraw::handle_withdraw_all(ctx)
+    }
+
     pub fn create_position<'a, 'b, 'c, 'info>(
         ctx: Context<'a, 'b, 'c, 'info, DlmmCreatePosition<'info>>,
         lower_bin_id: i32,

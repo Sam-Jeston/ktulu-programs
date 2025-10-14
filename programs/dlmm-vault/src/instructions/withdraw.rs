@@ -153,3 +153,90 @@ pub fn handle_withdraw<'a, 'b, 'c, 'info>(
 
     Ok(())
 }
+
+pub fn handle_withdraw_all<'a, 'b, 'c, 'info>(
+    ctx: Context<'a, 'b, 'c, 'info, DlmmWithdraw<'info>>,
+) -> Result<()> {
+    ensure_signer_is_owner(&ctx.accounts.signer.key, &ctx.accounts.vault_account)?;
+    let token_x_withdraw_amount = ctx.accounts.vault_token_x_account.amount;
+    let token_y_withdraw_amount = ctx.accounts.vault_token_y_account.amount;
+    let harvest_token_withdraw_amount = ctx.accounts.harvest_token.amount;
+
+    if token_x_withdraw_amount > 0 {
+        let signer_seeds: &[&[&[u8]]] = &[&[
+            b"dlmm_vault",
+            ctx.accounts.signer.key.as_ref(),
+            ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
+            &[ctx.bumps.vault_account],
+        ]];
+        token_interface::transfer_checked(
+            CpiContext::new(
+                ctx.accounts.token_x_program.to_account_info(),
+                TransferChecked {
+                    from: ctx.accounts.vault_token_x_account.to_account_info(),
+                    to: ctx.accounts.vault_owner_token_x.to_account_info(),
+                    authority: ctx.accounts.vault_account.to_account_info(),
+                    mint: ctx.accounts.token_x_mint.to_account_info(),
+                },
+            )
+            .with_signer(signer_seeds),
+            token_x_withdraw_amount,
+            ctx.accounts.token_x_mint.decimals,
+        )?;
+    }
+
+    if token_y_withdraw_amount > 0 {
+        let signer_seeds: &[&[&[u8]]] = &[&[
+            b"dlmm_vault",
+            ctx.accounts.signer.key.as_ref(),
+            ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
+            &[ctx.bumps.vault_account],
+        ]];
+        token_interface::transfer_checked(
+            CpiContext::new(
+                ctx.accounts.token_y_program.to_account_info(),
+                TransferChecked {
+                    from: ctx.accounts.vault_token_y_account.to_account_info(),
+                    to: ctx.accounts.vault_owner_token_y.to_account_info(),
+                    authority: ctx.accounts.vault_account.to_account_info(),
+                    mint: ctx.accounts.token_y_mint.to_account_info(),
+                },
+            )
+            .with_signer(signer_seeds),
+            token_y_withdraw_amount,
+            ctx.accounts.token_y_mint.decimals,
+        )?;
+    }
+
+    if harvest_token_withdraw_amount > 0 {
+        let signer_seeds: &[&[&[u8]]] = &[&[
+            b"dlmm_vault",
+            ctx.accounts.signer.key.as_ref(),
+            ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
+            &[ctx.bumps.vault_account],
+        ]];
+        token_interface::transfer_checked(
+            CpiContext::new(
+                ctx.accounts.harvest_mint_program.to_account_info(),
+                TransferChecked {
+                    from: ctx.accounts.harvest_token.to_account_info(),
+                    to: ctx.accounts.vault_owner_harvest_token.to_account_info(),
+                    authority: ctx.accounts.vault_account.to_account_info(),
+                    mint: ctx.accounts.harvest_mint.to_account_info(),
+                },
+            )
+            .with_signer(signer_seeds),
+            harvest_token_withdraw_amount,
+            ctx.accounts.harvest_mint.decimals,
+        )?;
+    }
+
+    emit!(WithdrawEvent {
+        vault_account: ctx.accounts.vault_account.key(),
+        token_x_withdraw_amount,
+        token_y_withdraw_amount,
+        harvest_token_withdraw_amount,
+    });
+
+    Ok(())
+}
