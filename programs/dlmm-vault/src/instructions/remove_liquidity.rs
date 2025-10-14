@@ -4,7 +4,7 @@ use crate::{
         types::{BinLiquidityReduction, RemainingAccountsInfo},
     },
     ensure_signer_is_owner_or_operator,
-    events::remove_liquidity::RemoveLiquidityEvent,
+    events::remove_liquidity::{RemoveLiquidityByRangeEvent, RemoveLiquidityEvent},
     DlmmVaultAccount,
 };
 use anchor_lang::prelude::*;
@@ -139,6 +139,74 @@ pub fn handle_dlmm_remove_liquidity<'a, 'b, 'c, 'info>(
         position: ctx.accounts.position.key(),
         signer: ctx.accounts.signer.key(),
         bin_liquidity_reduction,
+    });
+
+    Ok(())
+}
+
+pub fn handle_dlmm_remove_liquidity_by_range<'a, 'b, 'c, 'info>(
+    ctx: Context<'a, 'b, 'c, 'info, DlmmRemoveLiquidity<'info>>,
+    min_bin_id: i32,
+    max_bin_id: i32,
+) -> Result<()> {
+    // Position creation is valid for both the owner and the operator
+    ensure_signer_is_owner_or_operator(&ctx.accounts.signer.key, &ctx.accounts.vault_account)?;
+
+    let accounts = dlmm::cpi::accounts::RemoveLiquidityByRange2 {
+        lb_pair: ctx.accounts.lb_pair.to_account_info(),
+        bin_array_bitmap_extension: ctx
+            .accounts
+            .bin_array_bitmap_extension
+            .as_ref()
+            .map(|account| account.to_account_info()),
+        reserve_x: ctx.accounts.reserve_x.to_account_info(),
+        reserve_y: ctx.accounts.reserve_y.to_account_info(),
+        user_token_x: ctx.accounts.vault_token_x.to_account_info(),
+        user_token_y: ctx.accounts.vault_token_y.to_account_info(),
+        token_x_mint: ctx.accounts.token_x_mint.to_account_info(),
+        token_y_mint: ctx.accounts.token_y_mint.to_account_info(),
+        position: ctx.accounts.position.to_account_info(),
+        sender: ctx.accounts.vault_account.to_account_info(),
+        token_x_program: ctx.accounts.token_x_program.to_account_info(),
+        token_y_program: ctx.accounts.token_y_program.to_account_info(),
+        event_authority: ctx.accounts.event_authority.to_account_info(),
+        program: ctx.accounts.dlmm_program.to_account_info(),
+        memo_program: ctx.accounts.memo_program.to_account_info(),
+    };
+
+    let signer_seeds: &[&[&[u8]]] = &[&[
+        b"dlmm_vault",
+        ctx.accounts.vault_account.owner.as_ref(),
+        ctx.accounts.vault_account.dlmm_pool_id.as_ref(),
+        &[ctx.bumps.vault_account],
+    ]];
+
+    let mut rem: Vec<AccountInfo<'info>> = Vec::with_capacity(2);
+    rem.push(ctx.accounts.bin_array_lower.to_account_info());
+    rem.push(ctx.accounts.bin_array_upper.to_account_info());
+
+    let cpi_context = CpiContext::new(ctx.accounts.dlmm_program.to_account_info(), accounts)
+        .with_signer(signer_seeds)
+        .with_remaining_accounts(rem);
+
+    // Explicitly have no support for any Token2022 hooks at this point in time. Vaults initialization ensures
+    // that if the token is token2022, that it has no extensions
+    let remaining_accounts_info = RemainingAccountsInfo { slices: vec![] };
+
+    dlmm::cpi::remove_liquidity_by_range2(
+        cpi_context,
+        min_bin_id,
+        max_bin_id,
+        10000,
+        remaining_accounts_info,
+    )?;
+
+    emit!(RemoveLiquidityByRangeEvent {
+        vault_account: ctx.accounts.vault_account.key(),
+        position: ctx.accounts.position.key(),
+        signer: ctx.accounts.signer.key(),
+        min_bin_id,
+        max_bin_id,
     });
 
     Ok(())

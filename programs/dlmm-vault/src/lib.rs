@@ -132,6 +132,16 @@ pub mod dlmm_vault {
         instructions::remove_liquidity::handle_dlmm_remove_liquidity(ctx, bin_liquidity_reduction)
     }
 
+    pub fn remove_liquidity_by_range<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, DlmmRemoveLiquidity<'info>>,
+        min_bin_id: i32,
+        max_bin_id: i32,
+    ) -> Result<()> {
+        instructions::remove_liquidity::handle_dlmm_remove_liquidity_by_range(
+            ctx, min_bin_id, max_bin_id,
+        )
+    }
+
     pub fn claim_fees<'a, 'b, 'c, 'info>(
         ctx: Context<'a, 'b, 'c, 'info, DlmmClaimFees<'info>>,
         min_bin_id: i32,
