@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::AssociatedToken;
+use anchor_spl::{associated_token::AssociatedToken, token_2022::TransferChecked, token_interface};
 
 use crate::{
     events::initialize::InitializeEvent, DlmmVaultAccount, FeeCompoundingStrategy, VaultErrorCode,
@@ -59,6 +59,11 @@ pub struct Initialize<'info> {
     pub harvest_account: InterfaceAccount<'info, TokenAccount>,
 
     pub associated_token_program: Program<'info, AssociatedToken>,
+
+    #[account(mut)]
+    pub vault_owner_token_x: InterfaceAccount<'info, TokenAccount>,
+    #[account(mut)]
+    pub vault_owner_token_y: InterfaceAccount<'info, TokenAccount>,
 }
 
 pub fn handle_initialize<'a, 'b, 'c, 'info>(
@@ -71,6 +76,8 @@ pub fn handle_initialize<'a, 'b, 'c, 'info>(
     operator: Pubkey,
     use_harvest_mint: bool,
     harvest_bps: u16,
+    amount_x: u64,
+    amount_y: u64,
 ) -> Result<()> {
     if harvest_bps > 10_000 {
         return Err(error!(VaultErrorCode::InvalidHarvestBps));
@@ -94,6 +101,38 @@ pub fn handle_initialize<'a, 'b, 'c, 'info>(
     ctx.accounts.vault_account.auto_rebalance = auto_rebalance;
     ctx.accounts.vault_account.fee_compounding_strategy = fee_compounding_strategy.clone();
 
+    if amount_x > 0 {
+        token_interface::transfer_checked(
+            CpiContext::new(
+                ctx.accounts.token_x_program.to_account_info(),
+                TransferChecked {
+                    from: ctx.accounts.vault_owner_token_x.to_account_info(),
+                    to: ctx.accounts.token_x_ata.to_account_info(),
+                    authority: ctx.accounts.signer.to_account_info(),
+                    mint: ctx.accounts.token_x_mint.to_account_info(),
+                },
+            ),
+            amount_x,
+            ctx.accounts.token_x_mint.decimals,
+        )?;
+    }
+
+    if amount_y > 0 {
+        token_interface::transfer_checked(
+            CpiContext::new(
+                ctx.accounts.token_y_program.to_account_info(),
+                TransferChecked {
+                    from: ctx.accounts.vault_owner_token_y.to_account_info(),
+                    to: ctx.accounts.token_y_ata.to_account_info(),
+                    authority: ctx.accounts.signer.to_account_info(),
+                    mint: ctx.accounts.token_y_mint.to_account_info(),
+                },
+            ),
+            amount_y,
+            ctx.accounts.token_y_mint.decimals,
+        )?;
+    }
+
     emit!(InitializeEvent {
         vault_account: ctx.accounts.vault_account.key(),
         owner: ctx.accounts.signer.key(),
@@ -110,6 +149,8 @@ pub fn handle_initialize<'a, 'b, 'c, 'info>(
         use_harvest_mint,
         harvest_bps: harvest_bps,
         harvest_mint: ctx.accounts.harvest_mint.key(),
+        amount_x: amount_x,
+        amount_y: amount_y,
     });
 
     Ok(())

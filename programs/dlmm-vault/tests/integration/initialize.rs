@@ -10,6 +10,7 @@ use crate::helpers::account::load_account;
 use crate::helpers::event::find_event;
 use crate::helpers::initialize_ix::initialize_vault_ix;
 use crate::helpers::program::load_dlmm_vault_program;
+use crate::helpers::token::create_and_fund_token_account;
 use crate::helpers::transaction::prepare_tx;
 
 const USDC_USDT_POOL: Pubkey = solana_sdk::pubkey!("ARwi1S4DaiTG5DX7S4M4ZsrXqpMD1MrTmbu9ue2tpmEq");
@@ -31,6 +32,21 @@ fn test_initialize() {
     load_account(&mut svm, &USDC_MINT);
     load_account(&mut svm, &USDT_MINT);
 
+    let user_ata_x = create_and_fund_token_account(
+        &mut svm,
+        &user_clone.pubkey(),
+        &USDC_MINT,
+        1_000_000_000,
+        &anchor_spl::token::ID,
+    );
+    let user_ata_y = create_and_fund_token_account(
+        &mut svm,
+        &user_clone.pubkey(),
+        &USDT_MINT,
+        1_000_000_000,
+        &anchor_spl::token::ID,
+    );
+
     let (initialize_ix, vault_pda, _, _, _) = initialize_vault_ix(
         &user_clone,
         &user_clone,
@@ -48,6 +64,10 @@ fn test_initialize() {
         25,
         &USDC_MINT,
         &anchor_spl::token::ID,
+        100,
+        100,
+        &user_ata_x,
+        &user_ata_y,
     );
 
     let tx = prepare_tx(&mut svm, &user.pubkey(), &[&user], &[initialize_ix]);
@@ -76,4 +96,6 @@ fn test_initialize() {
     assert_eq!(ev.use_harvest_mint, true);
     assert_eq!(ev.harvest_bps, 25);
     assert_eq!(ev.harvest_mint, USDC_MINT);
+    assert_eq!(ev.amount_x, 100);
+    assert_eq!(ev.amount_y, 100);
 }

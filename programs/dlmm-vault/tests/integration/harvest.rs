@@ -104,6 +104,10 @@ async fn test_harvest() {
         0,
         &USDT_MINT,
         &anchor_spl::token::ID,
+        0,
+        0,
+        &user_ata_x,
+        &user_ata_y,
     );
 
     let token_x_deposit_amount = 100_000;

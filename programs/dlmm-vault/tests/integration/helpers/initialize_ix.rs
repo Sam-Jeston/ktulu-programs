@@ -23,6 +23,10 @@ pub fn initialize_vault_ix(
     harvest_bps: u16,
     harvest_mint: &Pubkey,
     harvest_program: &Pubkey,
+    amount_x: u64,
+    amount_y: u64,
+    user_x_ata: &Pubkey,
+    user_y_ata: &Pubkey,
 ) -> (Instruction, Pubkey, Pubkey, Pubkey, Pubkey) {
     let initialize_ix_data = dlmm_vault::instruction::Initialize {
         auto_compound,
@@ -33,6 +37,8 @@ pub fn initialize_vault_ix(
         operator: operator.pubkey(),
         use_harvest_mint,
         harvest_bps,
+        amount_x,
+        amount_y,
     }
     .data();
 
@@ -68,6 +74,8 @@ pub fn initialize_vault_ix(
         token_x_ata: vault_ata_x,
         token_y_ata: vault_ata_y,
         associated_token_program: anchor_spl::associated_token::ID,
+        vault_owner_token_x: user_x_ata.clone(),
+        vault_owner_token_y: user_y_ata.clone(),
     }
     .to_account_metas(None);
 

@@ -11,7 +11,6 @@ use solana_sdk::{signature::Keypair, signer::Signer};
 use crate::helpers::account::load_account;
 use crate::helpers::add_liquidity_ix::add_liquidity_ix;
 use crate::helpers::create_position_ix::create_position_ix;
-use crate::helpers::deposit_ix::deposit_vault_ix;
 use crate::helpers::dlmm::{bin_id_to_bin_array_index, load_dlmm_accounts};
 use crate::helpers::dlmm_pda::{
     derive_bin_array_pda, derive_event_authority_pda, derive_position_pda,
@@ -60,6 +59,9 @@ fn test_create_position() {
         &anchor_spl::token::ID,
     );
 
+    let token_x_deposit_amount = 10_000;
+    let token_y_deposit_amount = 5_000;
+
     let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y, _) = initialize_vault_ix(
         &user_clone,
         &user_clone,
@@ -77,24 +79,10 @@ fn test_create_position() {
         0,
         &USDC_MINT,
         &anchor_spl::token::ID,
-    );
-
-    let token_x_deposit_amount = 10_000;
-    let token_y_deposit_amount = 5_000;
-
-    let deposit_ix = deposit_vault_ix(
-        &user_clone,
-        &vault_pda,
-        &user_ata_x,
-        &vault_ata_x,
-        &user_ata_y,
-        &vault_ata_y,
-        &USDC_MINT,
-        &USDT_MINT,
-        &anchor_spl::token::ID,
-        &anchor_spl::token::ID,
         token_x_deposit_amount,
         token_y_deposit_amount,
+        &user_ata_x,
+        &user_ata_y,
     );
 
     let pool_state = load_dlmm_accounts(&mut svm, &USDC_USDT_POOL).unwrap();
@@ -176,12 +164,7 @@ fn test_create_position() {
         &mut svm,
         &user.pubkey(),
         &[&user],
-        &[
-            initialize_ix,
-            deposit_ix,
-            create_position_ix,
-            add_liquidity_ix,
-        ],
+        &[initialize_ix, create_position_ix, add_liquidity_ix],
     );
     let sim_res = svm.simulate_transaction(tx.clone()).unwrap();
     let meta = svm.send_transaction(tx).unwrap();

@@ -82,6 +82,10 @@ fn test_token2022_integration() {
         0,
         &PUMP_MINT,
         &token_x_program,
+        0,
+        0,
+        &user_ata_x,
+        &user_ata_y,
     );
 
     let token_x_deposit_amount = 10_000;

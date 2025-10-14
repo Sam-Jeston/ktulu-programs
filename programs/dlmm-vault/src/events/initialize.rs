@@ -20,4 +20,6 @@ pub struct InitializeEvent {
     pub use_harvest_mint: bool,
     pub harvest_bps: u16,
     pub harvest_mint: Pubkey,
+    pub amount_x: u64,
+    pub amount_y: u64,
 }

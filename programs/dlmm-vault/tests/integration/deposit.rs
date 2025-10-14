@@ -69,6 +69,10 @@ fn test_deposit() {
         0,
         &USDC_MINT,
         &anchor_spl::token::ID,
+        0,
+        0,
+        &user_ata_x,
+        &user_ata_y,
     );
 
     let token_x_deposit_amount = 10_000;
@@ -173,6 +177,10 @@ fn test_deposit_zero_amount() {
         0,
         &USDC_MINT,
         &anchor_spl::token::ID,
+        0,
+        0,
+        &user_ata_x,
+        &user_ata_y,
     );
 
     let token_x_deposit_amount = 0;

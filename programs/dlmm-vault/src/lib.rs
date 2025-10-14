@@ -39,6 +39,8 @@ pub mod dlmm_vault {
         operator: Pubkey,
         use_harvest_mint: bool,
         harvest_bps: u16,
+        amount_x: u64,
+        amount_y: u64,
     ) -> Result<()> {
         instructions::initialize::handle_initialize(
             ctx,
@@ -50,6 +52,8 @@ pub mod dlmm_vault {
             operator,
             use_harvest_mint,
             harvest_bps,
+            amount_x,
+            amount_y,
         )
     }
 

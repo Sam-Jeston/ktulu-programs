@@ -73,6 +73,10 @@ fn test_withdraw() {
         0,
         &USDC_MINT,
         &anchor_spl::token::ID,
+        0,
+        0,
+        &user_ata_x,
+        &user_ata_y,
     );
 
     // Submit our init tx to initialize the vault account

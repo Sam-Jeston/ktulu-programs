@@ -43,7 +43,14 @@ pub struct DlmmWithdraw<'info> {
     #[account(mut)]
     pub vault_owner_harvest_token: InterfaceAccount<'info, TokenAccount>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        token::mint = harvest_mint,
+        token::authority = vault_account,
+        token::token_program = harvest_mint_program,
+        seeds = [b"harvest".as_ref(), vault_account.key().as_ref()],
+        bump,
+    )]
     pub harvest_token: InterfaceAccount<'info, TokenAccount>,
 
     pub harvest_mint: InterfaceAccount<'info, Mint>,
@@ -57,30 +64,6 @@ pub fn handle_withdraw<'a, 'b, 'c, 'info>(
     harvest_token_withdraw_amount: u64,
 ) -> Result<()> {
     ensure_signer_is_owner(&ctx.accounts.signer.key, &ctx.accounts.vault_account)?;
-
-    // Validate that the vault_owner_token_x account is an ATA for vault_account.token_x_mint
-    if ctx.accounts.vault_owner_token_x.mint != ctx.accounts.vault_account.token_x_mint {
-        return Err(error!(VaultErrorCode::InvalidTokenAccount));
-    }
-
-    // Validate that the vault_owner_token_y account is an ATA for vault_account.token_y_mint
-    if ctx.accounts.vault_owner_token_y.mint != ctx.accounts.vault_account.token_y_mint {
-        return Err(error!(VaultErrorCode::InvalidTokenAccount));
-    }
-
-    // Validate that the owner of the vault is the owner of the token accounts
-    if ctx.accounts.vault_owner_token_x.owner != ctx.accounts.vault_account.owner {
-        return Err(error!(VaultErrorCode::InvalidTokenAccount));
-    }
-
-    if ctx.accounts.vault_owner_token_y.owner != ctx.accounts.vault_account.owner {
-        return Err(error!(VaultErrorCode::InvalidTokenAccount));
-    }
-
-    if ctx.accounts.vault_owner_harvest_token.owner != ctx.accounts.vault_account.owner {
-        return Err(error!(VaultErrorCode::InvalidTokenAccount));
-    }
-
     // NOTE: Withdraw amounts can be zero, only withdraw where balance is > 0
     if token_x_withdraw_amount > ctx.accounts.vault_token_x_account.amount {
         return Err(error!(VaultErrorCode::InvalidWithdrawAmount));
