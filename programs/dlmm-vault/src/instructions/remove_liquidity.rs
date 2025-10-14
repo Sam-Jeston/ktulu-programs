@@ -21,6 +21,7 @@ pub struct DlmmRemoveLiquidity<'info> {
     /// CHECK: The pool account
     pub lb_pair: UncheckedAccount<'info>,
 
+    #[account(mut)]
     /// CHECK: Bin array extension account of the pool
     pub bin_array_bitmap_extension: Option<UncheckedAccount<'info>>,
 
