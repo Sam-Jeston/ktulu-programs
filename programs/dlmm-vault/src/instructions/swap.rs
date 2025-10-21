@@ -3,7 +3,7 @@ use std::str::FromStr;
 use crate::harvest::HarvestEvent;
 use crate::{
     ensure_signer_is_owner_or_operator, events::rebalance::RebalanceEvent,
-    jupiter::program::Jupiter, token_amount, DlmmVaultAccount,
+    jupiter::program::Jupiter, DlmmVaultAccount,
 };
 use crate::{mul_div_floor_u64, VaultErrorCode};
 use anchor_lang::prelude::*;
@@ -152,12 +152,12 @@ pub fn handle_rebalance<'a, 'b, 'c, 'info>(
     )?;
 
     // Re-read the token accounts to determine the final balances
-    let final_in_info = ctx.accounts.vault_input_token_account.to_account_info();
-    let final_out_info = ctx.accounts.vault_output_token_account.to_account_info();
-    let final_in_balance = token_amount(&final_in_info)?;
-    let final_out_balance = token_amount(&final_out_info)?;
-    let final_operator_fee_balance =
-        token_amount(&ctx.accounts.operator_fee_account.to_account_info())?;
+    ctx.accounts.vault_input_token_account.reload()?;
+    ctx.accounts.vault_output_token_account.reload()?;
+    ctx.accounts.operator_fee_account.reload()?;
+    let final_in_balance = ctx.accounts.vault_input_token_account.amount;
+    let final_out_balance = ctx.accounts.vault_output_token_account.amount;
+    let final_operator_fee_balance = ctx.accounts.operator_fee_account.amount;
 
     // Last safety step. Final in should be less than initial in
     require!(
@@ -331,12 +331,12 @@ pub fn handle_harvest<'a, 'b, 'c, 'info>(
     )?;
 
     // Re-read the token accounts to determine the final balances
-    let final_in_info = ctx.accounts.vault_input_token_account.to_account_info();
-    let final_out_info = ctx.accounts.vault_output_token_account.to_account_info();
-    let final_in_balance = token_amount(&final_in_info)?;
-    let final_out_balance = token_amount(&final_out_info)?;
-    let final_operator_fee_balance =
-        token_amount(&ctx.accounts.operator_fee_account.to_account_info())?;
+    ctx.accounts.vault_input_token_account.reload()?;
+    ctx.accounts.vault_output_token_account.reload()?;
+    ctx.accounts.operator_fee_account.reload()?;
+    let final_in_balance = ctx.accounts.vault_input_token_account.amount;
+    let final_out_balance = ctx.accounts.vault_output_token_account.amount;
+    let final_operator_fee_balance = ctx.accounts.operator_fee_account.amount;
 
     // Last safety step. Final in should be less than initial in
     require!(

@@ -1,5 +1,5 @@
 use anchor_lang::AnchorDeserialize;
-use dlmm_vault::dlmm::types::BinLiquidityDistribution;
+use dlmm_vault::dlmm::types::{BinLiquidityDistribution, BinLiquidityReduction};
 use dlmm_vault::events::add_liquidity::AddLiquidityEvent;
 use dlmm_vault::events::create_position::CreatePositionEvent;
 use dlmm_vault::{FeeCompoundingStrategy, VolatilityStrategy};
@@ -10,6 +10,8 @@ use solana_sdk::{signature::Keypair, signer::Signer};
 
 use crate::helpers::account::load_account;
 use crate::helpers::add_liquidity_ix::add_liquidity_ix;
+use crate::helpers::claim_fees_ix::claim_fees_ix;
+use crate::helpers::close_position_ix::close_position_ix;
 use crate::helpers::create_position_ix::create_position_ix;
 use crate::helpers::deposit_ix::deposit_vault_ix;
 use crate::helpers::dlmm::{bin_id_to_bin_array_index, load_dlmm_accounts};
@@ -19,6 +21,7 @@ use crate::helpers::dlmm_pda::{
 use crate::helpers::event::find_event;
 use crate::helpers::initialize_ix::initialize_vault_ix;
 use crate::helpers::program::{load_dlmm_program, load_dlmm_vault_program};
+use crate::helpers::remove_liquidity_ix::remove_liquidity_ix;
 use crate::helpers::token::{create_and_fund_token_account, validate_token_account_balance};
 use crate::helpers::transaction::prepare_tx;
 
@@ -26,6 +29,7 @@ const PUMP_USDC_POOL: Pubkey = solana_sdk::pubkey!("9SMp4yLKGtW9TnLimfVPkDARsyNS
 const PUMP_MINT: Pubkey = solana_sdk::pubkey!("pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn");
 const USDC_MINT: Pubkey = solana_sdk::pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 const RENT_PROGRAM: Pubkey = solana_sdk::pubkey!("SysvarRent111111111111111111111111111111111");
+const MEMO_PROGRAM: Pubkey = solana_sdk::pubkey!("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
 const TOKEN2022_PROGRAM: Pubkey =
     solana_sdk::pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
 #[test]
@@ -225,4 +229,79 @@ fn test_token2022_integration() {
     // Validate the vault token accounts have been debited
     validate_token_account_balance(&mut svm, &vault_ata_x, token_x_deposit_amount - 200);
     validate_token_account_balance(&mut svm, &vault_ata_y, token_y_deposit_amount - 200);
+
+    // Test remove liquidity through close
+    let claim_fees_ix = claim_fees_ix(
+        &user_clone,
+        &vault_pda,
+        &PUMP_USDC_POOL,
+        &pool_state.reserve_x,
+        &pool_state.reserve_y,
+        &vault_ata_x,
+        &vault_ata_y,
+        &PUMP_MINT,
+        &USDC_MINT,
+        &position_pda,
+        &token_x_program,
+        &token_y_program,
+        &event_authority_pda,
+        &dlmm_vault::dlmm::ID,
+        &MEMO_PROGRAM,
+        &bin_array_key,
+        &top_bin_array_key,
+        lower_bin_id,
+        bin_id,
+        &user_ata_y,
+    );
+
+    let remove_liquidity_ix = remove_liquidity_ix(
+        &user_clone,
+        &vault_pda,
+        &PUMP_USDC_POOL,
+        &None,
+        &pool_state.reserve_x,
+        &pool_state.reserve_y,
+        &vault_ata_x,
+        &vault_ata_y,
+        &PUMP_MINT,
+        &USDC_MINT,
+        &position_pda,
+        &token_x_program,
+        &token_y_program,
+        &event_authority_pda,
+        &dlmm_vault::dlmm::ID,
+        &MEMO_PROGRAM,
+        &bin_array_key,
+        &top_bin_array_key,
+        vec![
+            BinLiquidityReduction {
+                bin_id: pool_state.active_id - 1,
+                bps_to_remove: 10000,
+            },
+            BinLiquidityReduction {
+                bin_id: pool_state.active_id,
+                bps_to_remove: 10000,
+            },
+            BinLiquidityReduction {
+                bin_id: pool_state.active_id + 1,
+                bps_to_remove: 10000,
+            },
+        ],
+    );
+
+    let close_position_ix = close_position_ix(
+        &user_clone,
+        &vault_pda,
+        &position_pda,
+        &dlmm_vault::dlmm::ID,
+        &event_authority_pda,
+    );
+
+    let tx = prepare_tx(
+        &mut svm,
+        &user.pubkey(),
+        &[&user],
+        &[claim_fees_ix, remove_liquidity_ix, close_position_ix],
+    );
+    svm.send_transaction(tx).unwrap();
 }

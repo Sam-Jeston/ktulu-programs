@@ -1,13 +1,12 @@
 // Closes the associated ATAs and Vault account
 // Validates that vault_token_x and vault_token_y balances are zero
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token_interface::{
     close_account, CloseAccount, Mint, TokenAccount, TokenInterface,
 };
 
 use crate::close_vault::CloseVaultEvent;
-use crate::{ensure_signer_is_owner, token_amount, DlmmVaultAccount, VaultErrorCode};
+use crate::{ensure_signer_is_owner, DlmmVaultAccount, VaultErrorCode};
 
 #[derive(Accounts)]
 pub struct CloseVault<'info> {
@@ -54,12 +53,12 @@ pub fn handle_close_vault(ctx: Context<CloseVault>) -> Result<()> {
     );
 
     // If any token account has a balance,
-    let token_x_info = ctx.accounts.vault_token_x.to_account_info();
-    let token_y_info = ctx.accounts.vault_token_y.to_account_info();
-    let harvest_token_info = ctx.accounts.vault_harvest_token.to_account_info();
-    let token_x_balance = token_amount(&token_x_info)?;
-    let token_y_balance = token_amount(&token_y_info)?;
-    let harvest_token_balance = token_amount(&harvest_token_info)?;
+    ctx.accounts.vault_token_x.reload()?;
+    ctx.accounts.vault_token_y.reload()?;
+    ctx.accounts.vault_harvest_token.reload()?;
+    let token_x_balance = ctx.accounts.vault_token_x.amount;
+    let token_y_balance = ctx.accounts.vault_token_y.amount;
+    let harvest_token_balance = ctx.accounts.vault_harvest_token.amount;
 
     // Ensure the token balances are zero. If they aren't, a withdraw instruction is
     // required first.

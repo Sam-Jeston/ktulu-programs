@@ -2,7 +2,7 @@ use crate::{
     dlmm::{self, types::RemainingAccountsInfo},
     ensure_signer_is_owner_or_operator,
     events::claim_rewards::ClaimRewardsEvent,
-    token_amount, DlmmVaultAccount, VaultErrorCode,
+    DlmmVaultAccount, VaultErrorCode,
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
@@ -103,8 +103,8 @@ pub fn handle_dlmm_claim_rewards<'a, 'b, 'c, 'info>(
     )?;
 
     // Re-read the token accounts to determine the final balances
-    let final_info = ctx.accounts.vault_token_account.to_account_info();
-    let final_balance = token_amount(&final_info)?;
+    ctx.accounts.vault_token_account.reload()?;
+    let final_balance = ctx.accounts.vault_token_account.amount;
 
     emit!(ClaimRewardsEvent {
         vault_account: ctx.accounts.vault_account.key(),

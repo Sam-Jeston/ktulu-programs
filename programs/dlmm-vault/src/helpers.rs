@@ -1,16 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_pack::Pack;
-use anchor_spl::token_2022::spl_token_2022::state::Account as SplTokenAccount;
 
 use crate::{DlmmVaultAccount, VaultErrorCode};
-
-pub fn token_amount(ai: &anchor_lang::prelude::AccountInfo) -> Result<u64> {
-    let amt = {
-        let data = ai.try_borrow_data()?;
-        SplTokenAccount::unpack(&data)?.amount
-    };
-    Ok(amt)
-}
 
 pub fn ensure_signer_is_owner(signer: &Pubkey, vault_account: &DlmmVaultAccount) -> Result<()> {
     let signer_is_owner = signer.key() == vault_account.owner;

@@ -1,8 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    ensure_signer_is_owner, events::withdraw::WithdrawEvent, token_amount, DlmmVaultAccount,
-    VaultErrorCode,
+    ensure_signer_is_owner, events::withdraw::WithdrawEvent, DlmmVaultAccount, VaultErrorCode,
 };
 use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
 
@@ -159,12 +158,12 @@ pub fn handle_withdraw_all<'a, 'b, 'c, 'info>(
     ctx: Context<'a, 'b, 'c, 'info, DlmmWithdraw<'info>>,
 ) -> Result<()> {
     ensure_signer_is_owner(&ctx.accounts.signer.key, &ctx.accounts.vault_account)?;
-    let token_x_info = ctx.accounts.vault_token_x_account.to_account_info();
-    let token_y_info = ctx.accounts.vault_token_y_account.to_account_info();
-    let harvest_token_info = ctx.accounts.harvest_token.to_account_info();
-    let token_x_withdraw_amount = token_amount(&token_x_info)?;
-    let token_y_withdraw_amount = token_amount(&token_y_info)?;
-    let harvest_token_withdraw_amount = token_amount(&harvest_token_info)?;
+    ctx.accounts.vault_token_x_account.reload()?;
+    ctx.accounts.vault_token_y_account.reload()?;
+    ctx.accounts.harvest_token.reload()?;
+    let token_x_withdraw_amount = ctx.accounts.vault_token_x_account.amount;
+    let token_y_withdraw_amount = ctx.accounts.vault_token_y_account.amount;
+    let harvest_token_withdraw_amount = ctx.accounts.harvest_token.amount;
 
     if token_x_withdraw_amount > 0 {
         let signer_seeds: &[&[&[u8]]] = &[&[

@@ -2,7 +2,7 @@ use crate::{
     dlmm::{self, types::RemainingAccountsInfo},
     ensure_signer_is_owner_or_operator,
     events::claim_fees::ClaimFeesEvent,
-    mul_div_floor_u64, token_amount, DlmmVaultAccount, VaultErrorCode,
+    mul_div_floor_u64, DlmmVaultAccount, VaultErrorCode,
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
@@ -133,10 +133,10 @@ pub fn handle_dlmm_claim_fees<'a, 'b, 'c, 'info>(
     dlmm::cpi::claim_fee2(cpi_context, min_bin_id, max_bin_id, remaining_accounts_info)?;
 
     // Re-read the token accounts to determine the final balances
-    let final_x_info = ctx.accounts.vault_token_x.to_account_info();
-    let final_y_info = ctx.accounts.vault_token_y.to_account_info();
-    let final_x_balance = token_amount(&final_x_info)?;
-    let final_y_balance = token_amount(&final_y_info)?;
+    ctx.accounts.vault_token_x.reload()?;
+    ctx.accounts.vault_token_y.reload()?;
+    let final_x_balance = ctx.accounts.vault_token_x.amount;
+    let final_y_balance = ctx.accounts.vault_token_y.amount;
 
     let x_accumulated = final_x_balance - initial_x_balance;
     let y_accumulated = final_y_balance - initial_y_balance;
