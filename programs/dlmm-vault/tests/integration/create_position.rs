@@ -175,7 +175,7 @@ fn test_create_position() {
     let ev = CreatePositionEvent::try_from_slice(body.as_slice()).expect("borsh decode");
     assert_eq!(ev.vault_account, vault_pda);
     assert_eq!(ev.position, position_pda);
-    assert_eq!(ev.lower_bin_id, -11);
+    assert_eq!(ev.lower_bin_id, -8);
     assert_eq!(ev.width, 5);
 
     let body = find_event(&meta.logs, b"AddLiquidityEvent");

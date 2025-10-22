@@ -1,6 +1,7 @@
 use anchor_lang::{AnchorDeserialize, Id, InstructionData, ToAccountMetas};
 use dlmm_vault::events::rebalance::RebalanceEvent;
 use dlmm_vault::{FeeCompoundingStrategy, VolatilityStrategy};
+use jup_swap::quote::QuoteResponse;
 use litesvm::LiteSVM;
 use solana_compute_budget::compute_budget::ComputeBudget;
 use solana_instruction::account_meta::AccountMeta as SAccountMeta;
@@ -162,12 +163,12 @@ async fn test_rebalance() {
     // println!("quote response JSON: {}", quote_response_json);
 
     let quote_response_json = "{\"inputMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\"inAmount\":\"45000\",\"outputMint\":\"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB\",\"outAmount\":\"44906\",\"otherAmountThreshold\":\"44906\",\"swapMode\":\"ExactIn\",\"slippageBps\":0,\"platformFee\":{\"amount\":\"44\",\"feeBps\":10},\"priceImpactPct\":\"0.0003233659234587966428656893\",\"routePlan\":[{\"swapInfo\":{\"ammKey\":\"4bg8UDLXEm4T6pCyoW7iUizAz9HMoxhTAtMquSXigFZu\",\"label\":\"Meteora DLMM\",\"inputMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\"outputMint\":\"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB\",\"inAmount\":\"45000\",\"outAmount\":\"44950\",\"feeAmount\":\"6\",\"feeMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\"},\"percent\":100}],\"contextSlot\":373228081,\"timeTaken\":0.000506802}";
-    let quote_response = serde_json::from_str(&quote_response_json).unwrap();
+    let quote_response: QuoteResponse = serde_json::from_str(&quote_response_json).unwrap();
 
     let response = jupiter_swap_api_client
         .swap_instructions(&SwapRequest {
             user_public_key: vault_pda,
-            quote_response,
+            quote_response: quote_response.clone(),
             config: TransactionConfig {
                 skip_user_accounts_rpc_calls: true,
                 wrap_and_unwrap_sol: false,
@@ -244,6 +245,9 @@ async fn test_rebalance() {
     let mut compute_budget = ComputeBudget::new_with_defaults(true);
     compute_budget.compute_unit_limit = 400_000;
     svm = svm.with_compute_budget(compute_budget);
+
+    // Set svm slot to value from quote response
+    svm.warp_to_slot(quote_response.clone().context_slot);
 
     let tx = prepare_v0_tx(
         &mut svm,

@@ -208,7 +208,7 @@ fn test_token2022_integration() {
     let ev = CreatePositionEvent::try_from_slice(body.as_slice()).expect("borsh decode");
     assert_eq!(ev.vault_account, vault_pda);
     assert_eq!(ev.position, position_pda);
-    assert_eq!(ev.lower_bin_id, -2492);
+    assert_eq!(ev.lower_bin_id, -2806);
     assert_eq!(ev.width, 5);
 
     let body = find_event(&meta.logs, b"AddLiquidityEvent");

@@ -1,7 +1,9 @@
+use anchor_lang::solana_program::system_program;
 use anchor_lang::{AnchorDeserialize, Id, InstructionData, ToAccountMetas};
 use dlmm_vault::events::rebalance::RebalanceEvent;
 use dlmm_vault::harvest::HarvestEvent;
 use dlmm_vault::{FeeCompoundingStrategy, VolatilityStrategy};
+use jup_swap::quote::QuoteResponse;
 use litesvm::LiteSVM;
 use solana_compute_budget::compute_budget::ComputeBudget;
 use solana_instruction::account_meta::AccountMeta as SAccountMeta;
@@ -11,6 +13,7 @@ use solana_program_test::tokio;
 use solana_sdk::program_pack::Pack;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::{signature::Keypair, signer::Signer};
+use spl_associated_token_account::get_associated_token_address_with_program_id;
 use spl_token::state::{Account as TokenAccount, AccountState};
 
 use crate::helpers::account::load_account;
@@ -41,6 +44,9 @@ const TOKEN2022_PROGRAM: Pubkey =
     solana_sdk::pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
 const JUPITER_PROGRAM: Pubkey = solana_sdk::pubkey!("JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4");
 const DLMM_PROGRAM: Pubkey = solana_sdk::pubkey!("LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo");
+const PUMP_MINT: Pubkey = solana_sdk::pubkey!("pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn");
+const RENT_PROGRAM: Pubkey = solana_sdk::pubkey!("SysvarRent111111111111111111111111111111111");
+const MEMO_PROGRAM: Pubkey = solana_sdk::pubkey!("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
 
 #[tokio::test]
 async fn test_harvest() {
@@ -61,6 +67,7 @@ async fn test_harvest() {
     load_account(&mut svm, &USDC_USDT_POOL);
     load_account(&mut svm, &USDC_MINT);
     load_account(&mut svm, &USDT_MINT);
+    load_account(&mut svm, &PUMP_MINT);
 
     let token_x_initial_balance = 1_000_000_000;
     let token_y_initial_balance = 1_000_000_000;
@@ -79,12 +86,12 @@ async fn test_harvest() {
         token_y_initial_balance,
         &anchor_spl::token::ID,
     );
-    let operator_ata_y = create_and_fund_token_account(
+    let operator_ata_harvest = create_and_fund_token_account(
         &mut svm,
         &operator_clone.pubkey(),
-        &USDT_MINT,
+        &PUMP_MINT,
         token_y_initial_balance,
-        &anchor_spl::token::ID,
+        &TOKEN2022_PROGRAM,
     );
 
     let (initialize_ix, vault_pda, vault_ata_x, vault_ata_y, harvest_pda) = initialize_vault_ix(
@@ -100,10 +107,10 @@ async fn test_harvest() {
         FeeCompoundingStrategy::Aggressive,
         VolatilityStrategy::Spot,
         5,
-        false,
-        0,
-        &USDT_MINT,
-        &anchor_spl::token::ID,
+        true,
+        500,
+        &PUMP_MINT,
+        &TOKEN2022_PROGRAM,
         0,
         0,
         &user_ata_x,
@@ -145,7 +152,7 @@ async fn test_harvest() {
     let quote_request = QuoteRequest {
         amount: input_amount,
         input_mint: USDC_MINT,
-        output_mint: USDT_MINT,
+        output_mint: PUMP_MINT,
         platform_fee_bps: Some(100),
         // Limit quoting into DLMM for sake of testing
         dexes: Some("Meteora DLMM".to_string()),
@@ -163,19 +170,18 @@ async fn test_harvest() {
 
     // let quote_response_json = serde_json::to_string(&quote_response).unwrap();
     // println!("quote response JSON: {}", quote_response_json);
+    let quote_response_json = "{\"inputMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\"inAmount\":\"45000\",\"outputMint\":\"pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn\",\"outAmount\":\"12107300\",\"otherAmountThreshold\":\"12107300\",\"swapMode\":\"ExactIn\",\"slippageBps\":0,\"platformFee\":{\"amount\":\"122295\",\"feeBps\":100},\"priceImpactPct\":\"0\",\"routePlan\":[{\"swapInfo\":{\"ammKey\":\"62ypLB77qeCwsccN15GbvXdCDgUdwc76JzvLdfnef9VB\",\"label\":\"Meteora DLMM\",\"inputMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\"outputMint\":\"pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn\",\"inAmount\":\"45000\",\"outAmount\":\"12229595\",\"feeAmount\":\"47\",\"feeMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\"},\"percent\":100}],\"contextSlot\":374941340,\"timeTaken\":0.001501208}";
 
-    let quote_response_json = "{\"inputMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\"inAmount\":\"45000\",\"outputMint\":\"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB\",\"outAmount\":\"44515\",\"otherAmountThreshold\":\"44515\",\"swapMode\":\"ExactIn\",\"slippageBps\":0,\"platformFee\":{\"amount\":\"449\",\"feeBps\":100},\"priceImpactPct\":\"0.0001485968108222506963286582\",\"routePlan\":[{\"swapInfo\":{\"ammKey\":\"uGv7HFB1cKuxoAb36g65BzK8UVorpAR7SfrkwDZRzdJ\",\"label\":\"Meteora DLMM\",\"inputMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\"outputMint\":\"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB\",\"inAmount\":\"45000\",\"outAmount\":\"44964\",\"feeAmount\":\"9\",\"feeMint\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\"},\"percent\":100}],\"contextSlot\":372342403,\"timeTaken\":0.000481834}";
-
-    let quote_response = serde_json::from_str(&quote_response_json).unwrap();
+    let quote_response: QuoteResponse = serde_json::from_str(&quote_response_json).unwrap();
 
     let response = jupiter_swap_api_client
         .swap_instructions(&SwapRequest {
             user_public_key: vault_pda,
-            quote_response,
+            quote_response: quote_response.clone(),
             config: TransactionConfig {
                 skip_user_accounts_rpc_calls: true,
                 wrap_and_unwrap_sol: false,
-                fee_account: Some(operator_ata_y.clone()),
+                fee_account: Some(operator_ata_harvest.clone()),
                 dynamic_compute_unit_limit: true,
                 destination_token_account: Some(harvest_pda.clone()),
                 dynamic_slippage: Some(DynamicSlippageSettings {
@@ -197,21 +203,24 @@ async fn test_harvest() {
     }
     .data();
 
-    let mut accounts = dlmm_vault::accounts::Rebalance {
+    let mut accounts = dlmm_vault::accounts::Harvest {
         vault_account: vault_pda.clone(),
         signer: user_clone.pubkey(),
         input_mint: USDC_MINT.clone(),
         vault_input_token_account: vault_ata_x.clone(),
         input_token_program: anchor_spl::token::ID.clone(),
-        output_mint: USDT_MINT.clone(),
+        output_mint: PUMP_MINT.clone(),
         vault_output_token_account: harvest_pda.clone(),
-        output_token_program: anchor_spl::token::ID.clone(),
-        operator_fee_account: operator_ata_y.clone(),
+        output_token_program: TOKEN2022_PROGRAM.clone(),
+        operator_fee_account: operator_ata_harvest.clone(),
         jupiter_program: dlmm_vault::jupiter::program::Jupiter::id()
             .to_bytes()
             .into(),
     }
     .to_account_metas(None);
+
+    let ata =
+        get_associated_token_address_with_program_id(&vault_pda, &PUMP_MINT, &TOKEN2022_PROGRAM);
 
     let remaining_accounts = response.swap_instruction.accounts;
     accounts.extend(remaining_accounts.into_iter().map(|mut account| {
@@ -219,12 +228,14 @@ async fn test_harvest() {
         if account.pubkey != anchor_spl::token::ID
             && account.pubkey != TOKEN2022_PROGRAM
             && account.pubkey != JUPITER_PROGRAM
+            && account.pubkey != ata
             && account.pubkey != harvest_pda
             && account.pubkey != vault_ata_x
             && account.pubkey != vault_ata_y
-            && account.pubkey != operator_ata_y
+            && account.pubkey != operator_ata_harvest
             && account.pubkey != USDC_MINT
             && account.pubkey != USDT_MINT
+            && account.pubkey != PUMP_MINT
             && account.pubkey != vault_pda
             && account.pubkey != DLMM_PROGRAM
         {
@@ -247,21 +258,76 @@ async fn test_harvest() {
             .collect(),
     };
 
+    let harvest_ata_ix_data = dlmm_vault::instruction::InitializeHarvestAta {}.data();
+    let harvest_ata_accounts = dlmm_vault::accounts::InitializeHarvestAta {
+        vault_account: vault_pda.clone(),
+        system_program: system_program::ID.clone(),
+        signer: user_clone.pubkey(),
+        harvest_mint: PUMP_MINT.clone(),
+        harvest_program: TOKEN2022_PROGRAM.clone(),
+        harvest_ata: ata.clone(),
+        associated_token_program: anchor_spl::associated_token::ID.clone(),
+    }
+    .to_account_metas(None);
+
+    println!("harvest ata accounts: {:?}", harvest_ata_accounts);
+
+    let harvest_ata_ix = Instruction {
+        program_id: dlmm_vault::id().to_bytes().into(),
+        data: harvest_ata_ix_data,
+        accounts: harvest_ata_accounts
+            .iter()
+            .map(|a| SAccountMeta {
+                pubkey: a.pubkey.to_bytes().into(),
+                is_signer: a.is_signer,
+                is_writable: a.is_writable,
+            })
+            .collect(),
+    };
+
+    let harvest_ata_close_ix_data = dlmm_vault::instruction::CloseHarvestAta {}.data();
+    let harvest_ata_close_accounts = dlmm_vault::accounts::CloseHarvestAta {
+        vault_account: vault_pda.clone(),
+        system_program: system_program::ID.clone(),
+        signer: user_clone.pubkey(),
+        harvest_mint: PUMP_MINT.clone(),
+        harvest_program: TOKEN2022_PROGRAM.clone(),
+        harvest_ata: ata.clone(),
+        associated_token_program: anchor_spl::associated_token::ID.clone(),
+    }
+    .to_account_metas(None);
+
+    let harvest_close_ata_ix = Instruction {
+        program_id: dlmm_vault::id().to_bytes().into(),
+        data: harvest_ata_close_ix_data,
+        accounts: harvest_ata_close_accounts
+            .iter()
+            .map(|a| SAccountMeta {
+                pubkey: a.pubkey.to_bytes().into(),
+                is_signer: a.is_signer,
+                is_writable: a.is_writable,
+            })
+            .collect(),
+    };
+
     let mut compute_budget = ComputeBudget::new_with_defaults(true);
     compute_budget.compute_unit_limit = 400_000;
     svm = svm.with_compute_budget(compute_budget);
+
+    // Set svm slot to value from quote response
+    svm.warp_to_slot(quote_response.clone().context_slot);
 
     let tx = prepare_v0_tx(
         &mut svm,
         &user.pubkey(),
         &[&user],
         &address_lookup_table_accounts,
-        &[rebalance_ix],
+        &[harvest_ata_ix, rebalance_ix, harvest_close_ata_ix],
     );
     let meta = svm.send_transaction(tx).unwrap();
 
     // Ensure comput units used is less than 300_000
-    assert!(meta.compute_units_consumed < 300_000);
+    assert!(meta.compute_units_consumed < 500_000);
 
     // Print the vault token balances after the swap
     let token_account_in = svm.get_account(&vault_ata_x.to_bytes().into()).unwrap();
@@ -273,7 +339,7 @@ async fn test_harvest() {
     let ev = HarvestEvent::try_from_slice(body.as_slice()).expect("failed to borsh decode");
     assert_eq!(ev.vault_account, vault_pda);
     assert_eq!(ev.in_mint, USDC_MINT);
-    assert_eq!(ev.out_mint, USDT_MINT);
+    assert_eq!(ev.out_mint, PUMP_MINT);
     assert_eq!(ev.initial_in_balance, token_x_deposit_amount);
     assert_eq!(ev.initial_out_balance, 0);
     assert_eq!(ev.final_in_balance, token_account_data_in.amount);

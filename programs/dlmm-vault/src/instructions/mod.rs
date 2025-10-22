@@ -31,4 +31,5 @@ pub use swap::*;
 pub mod close;
 pub use close::*;
 
-// Compounding is achieved through a combination of claiming, rebalancing and adding liquidity
+pub mod harvest_ata;
+pub use harvest_ata::*;

@@ -185,6 +185,18 @@ pub mod dlmm_vault {
         instructions::swap::handle_harvest(ctx, harvest_data)
     }
 
+    pub fn initialize_harvest_ata<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, InitializeHarvestAta<'info>>,
+    ) -> Result<()> {
+        instructions::harvest_ata::handle_initialize_harvest_ata(ctx)
+    }
+
+    pub fn close_harvest_ata<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, CloseHarvestAta<'info>>,
+    ) -> Result<()> {
+        instructions::harvest_ata::handle_close_harvest_ata(ctx)
+    }
+
     pub fn close_vault<'a, 'b, 'c, 'info>(
         ctx: Context<'a, 'b, 'c, 'info, CloseVault<'info>>,
     ) -> Result<()> {

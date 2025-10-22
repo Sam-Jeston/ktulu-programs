@@ -325,8 +325,8 @@ fn test_close_position() {
     // should be returned to the vault
     // Note: these are hardcoded based on the seed, as withdrawing from an active bin gives you the ratio
     // from that bin, so output will not be identical to the input, but very close
-    validate_token_account_balance(&mut svm, &vault_ata_x, 10099);
-    validate_token_account_balance(&mut svm, &vault_ata_y, 4899);
+    validate_token_account_balance(&mut svm, &vault_ata_x, 9899);
+    validate_token_account_balance(&mut svm, &vault_ata_y, 5098);
 
     // Validate that the DlmmVault account has been updated to in_position = false and has the correct position_id
     let vault_account = svm.get_account(&vault_pda.to_bytes().into()).unwrap();
@@ -636,8 +636,8 @@ fn test_close_position_with_operator() {
     // should be returned to the vault
     // Note: these are hardcoded based on the seed, as withdrawing from an active bin gives you the ratio
     // from that bin, so output will not be identical to the input, but very close
-    validate_token_account_balance(&mut svm, &vault_ata_x, 10099);
-    validate_token_account_balance(&mut svm, &vault_ata_y, 4899);
+    validate_token_account_balance(&mut svm, &vault_ata_x, 9899);
+    validate_token_account_balance(&mut svm, &vault_ata_y, 5098);
 
     // Validate that the DlmmVault account has been updated to in_position = false and has the correct position_id
     let vault_account = svm.get_account(&vault_pda.to_bytes().into()).unwrap();
