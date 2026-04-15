@@ -2,6 +2,97 @@
 
 The Ktulu DLMM vault program is being open sourced as it provides a useful community reference for building programs that have signficant CPI integrations. Specifically the dlmm-vault program integrates with both Meteora DLMM and Jupiter Aggregator v6. The vertical application remains deployed in an alpha preview state at https://ktulu.io. Use at your own risk as the programs have not been audited.
 
+## Note:
+
+The mainnet program has been closed. Thanks for those who helped test the protocol. There were two vaults that remained open. The only token in these vaults was Sol. I have refunded the Sol in the vaults (as I of course could not forcibly close the position) plus the rent value.
+
+```
+These were the two open vaults, with the signatures of the refunds below:
+
+Vault #1
+Address: CEenGrA5xe271hZAxjrfYfiWSh87yV3wmzV7p5YiWhWc
+{
+  "owner": "GM5qrgMUHAAWDF7cSkFQ6DJDTqGugaQvDpaFxGLtTXxZ",
+  "inPosition": true,
+  "operator": "AP1t6iZxcomviEriw22wGygJWnhaPwhVp8AoVZ9H7Wtz",
+  "dlmmPoolId": "BGm1tav58oGcsQJehL9WXBFXF7D27vZsKefj4xJKD5Y",
+  "positionId": "DrBtEK28Z78bSxaB4JnwmKga8tLGmLHEyR4n8w7fjwB",
+  "tokenXMint": "So11111111111111111111111111111111111111112",
+  "tokenYMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "autoCompound": false,
+  "autoRebalance": false,
+  "useHarvestMint": true,
+  "harvestBps": 10000,
+  "harvestMint": "So11111111111111111111111111111111111111112",
+  "feeCompoundingStrategy": {
+    "conservative": {}
+  },
+  "binWidth": 49,
+  "volatilityStrategy": {
+    "spot": {}
+  },
+  "virtualTokenXHarvest": "0",
+  "virtualTokenYHarvest": "0"
+}
+================================================================================
+Vault #2
+Address: 8rBcopxDWbbScy238JVKcFp3FrrjjQg1eErHDxypf1vr
+{
+  "owner": "6uBbMw3jPsA4PqSst6SqSZSRe1hZbFoiVFZagLaJ21at",
+  "inPosition": true,
+  "operator": "AP1t6iZxcomviEriw22wGygJWnhaPwhVp8AoVZ9H7Wtz",
+  "dlmmPoolId": "BGm1tav58oGcsQJehL9WXBFXF7D27vZsKefj4xJKD5Y",
+  "positionId": "3tKY9Rwm4dZn3AJ6ynwHyNrYVfrancThvWbbV7hD39er",
+  "tokenXMint": "So11111111111111111111111111111111111111112",
+  "tokenYMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "autoCompound": true,
+  "autoRebalance": true,
+  "useHarvestMint": true,
+  "harvestBps": 10000,
+  "harvestMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "feeCompoundingStrategy": {
+    "conservative": {}
+  },
+  "binWidth": 41,
+  "volatilityStrategy": {
+    "spot": {}
+  },
+  "virtualTokenXHarvest": "25454701",
+  "virtualTokenYHarvest": "3777893"
+}
+================================================================================
+
+Open vault position balances (from Meteora DLMM):
+
+Open Vault #1
+Vault: CEenGrA5xe271hZAxjrfYfiWSh87yV3wmzV7p5YiWhWc
+Pool: BGm1tav58oGcsQJehL9WXBFXF7D27vZsKefj4xJKD5Y
+Position: DrBtEK28Z78bSxaB4JnwmKga8tLGmLHEyR4n8w7fjwB
+Token X mint: So11111111111111111111111111111111111111112
+Token Y mint: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+Position totalXAmount: 79713298 (ui: 0.079713298)
+Position totalYAmount: 0 (ui: 0)
+Position totalXAmountExcludeTransferFee: 79713298
+Position totalYAmountExcludeTransferFee: 0
+--------------------------------------------------------------------------------
+Open Vault #2
+Vault: 8rBcopxDWbbScy238JVKcFp3FrrjjQg1eErHDxypf1vr
+Pool: BGm1tav58oGcsQJehL9WXBFXF7D27vZsKefj4xJKD5Y
+Position: 3tKY9Rwm4dZn3AJ6ynwHyNrYVfrancThvWbbV7hD39er
+Token X mint: So11111111111111111111111111111111111111112
+Token Y mint: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+Position totalXAmount: 26178921 (ui: 0.026178921)
+Position totalYAmount: 0 (ui: 0)
+Position totalXAmountExcludeTransferFee: 26178921
+Position totalYAmountExcludeTransferFee: 0
+--------------------------------------------------------------------------------
+
+➜  programs git:(main) ✗ solana transfer GM5qrgMUHAAWDF7cSkFQ6DJDTqGugaQvDpaFxGLtTXxZ 0.14
+Signature: 53MYLLCyMi1qd6ArfMDFryobARdzYr4nDwEnPAYPPvZ6bsA73HvmX8Y2ZU9RtJxy4wJDXxBohZnHLhvvkEx8zXnh
+➜  programs git:(main) ✗ solana transfer 6uBbMw3jPsA4PqSst6SqSZSRe1hZbFoiVFZagLaJ21at 0.086
+Signature: 4UKyDicpAuLxgEg4otsrFr5ZhtEzfjApxFdgPxTkEJvGdKFQYhcAQaEocAoQtCsZeCDFffhMmGyiNfK6aLUjct8F
+```
+
 ## About the Program
 
 This vault program allows the auto-compounding, auto-rebalancing and auto-harvesting of Meteora DLMM positions.
