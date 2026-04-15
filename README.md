@@ -1,6 +1,6 @@
 # Ktulu DLMM Vault Program
 
-The Ktulu DLMM vault program is being open sourced as it provides a useful community reference for building programs that have signficant CPI integrations. Specifically the dlmm-vault program integrates with both Meteora DLMM and Jupiter Aggregator v6. The vertical application remains deployed in an alpha preview state at https://ktulu.io. Use at your own risk as the programs have not been audited.
+The Ktulu DLMM vault program is an open source example for building programs that have signficant CPI integrations. Specifically the dlmm-vault program integrates with both Meteora DLMM and Jupiter Aggregator v6.
 
 ## Note:
 
